@@ -4,14 +4,12 @@ import React, { useState, useEffect, useRef } from "react";
 
 interface TypingLoaderProps {
   onComplete?: () => void;
-  showSkip?: boolean;
 }
 
 const FULL_TEXT = "Mind.Maze";
 
 export default function TypingLoader({
   onComplete,
-  showSkip = true,
 }: TypingLoaderProps) {
   const [displayedText, setDisplayedText] = useState("");
   const [phase, setPhase] = useState<
@@ -93,8 +91,7 @@ export default function TypingLoader({
 
   return (
     <div
-      onClick={handleFinish}
-      className={`fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-[#09080e] cursor-pointer select-none px-4 transition-opacity duration-400 ${
+      className={`fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-[#09080e] select-none px-4 transition-opacity duration-500 ${
         isFinishing ? "opacity-0 pointer-events-none" : "opacity-100"
       }`}
     >
@@ -136,20 +133,6 @@ export default function TypingLoader({
           />
         </div>
       </div>
-
-      {/* Skip Button in Top Right */}
-      {showSkip && (
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleFinish();
-          }}
-          className="absolute top-6 right-6 rounded-full border border-white/20 bg-black/40 px-4 py-1.5 text-xs font-mono font-bold text-gray-300 hover:border-cyber-lime hover:text-cyber-lime transition-all"
-        >
-          Lewati →
-        </button>
-      )}
     </div>
   );
 }

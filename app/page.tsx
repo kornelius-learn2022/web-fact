@@ -11,20 +11,7 @@ import TypingLoader from "@/components/TypingLoader";
 
 export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [showWebIntro, setShowWebIntro] = useState(false);
-
-  useEffect(() => {
-    // Show typing loader on initial visit to web in this browser session
-    const entered = sessionStorage.getItem("mindmaze_web_entered");
-    if (!entered) {
-      setShowWebIntro(true);
-    }
-  }, []);
-
-  const handleIntroComplete = () => {
-    sessionStorage.setItem("mindmaze_web_entered", "true");
-    setShowWebIntro(false);
-  };
+  const [introFinished, setIntroFinished] = useState(false);
 
   const handleSelectCategory = (slug: string | null) => {
     setSelectedCategory(slug);
@@ -36,12 +23,16 @@ export default function HomePage() {
 
   return (
     <>
-      {showWebIntro && (
-        <TypingLoader
-          onComplete={handleIntroComplete}
-        />
+      {!introFinished && (
+        <TypingLoader onComplete={() => setIntroFinished(true)} />
       )}
-      <div className="flex min-h-screen flex-col bg-graphite-black">
+      <div
+        className={`flex min-h-screen flex-col bg-graphite-black transition-all duration-700 ${
+          introFinished
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 pointer-events-none -translate-y-2 h-screen overflow-hidden"
+        }`}
+      >
         {/* Top Navigation */}
         <Navbar />
 
