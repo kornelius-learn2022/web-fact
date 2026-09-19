@@ -15,8 +15,51 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Mind.Maze — Small Facts, Big Perspective",
-  description: "Interactive Random Trivia & Knowledge Discovery Website",
+  metadataBase: new URL("https://mindmaze-chi.vercel.app"),
+  title: {
+    default: "Mind.Maze — Small Facts, Big Perspective | Knowledge & Trivia Hub",
+    template: "%s | Mind.Maze",
+  },
+  description:
+    "Eksplorasi fakta unik interaktif, trivia kejutan, teka-teki silang AI, dan kuis pengetahuan umum dengan pendekatan visual neo-pop.",
+  keywords: [
+    "Mind Maze",
+    "fakta unik",
+    "trivia indonesia",
+    "pengetahuan umum",
+    "teka teki silang ai",
+    "kuis ai",
+    "knowledge hub",
+    "sains dan teknologi",
+    "sejarah dan seni",
+  ],
+  authors: [{ name: "Mind.Maze Editorial Team" }],
+  creator: "Mind.Maze",
+  openGraph: {
+    type: "website",
+    locale: "id_ID",
+    url: "https://mindmaze-chi.vercel.app",
+    title: "Mind.Maze — Small Facts, Big Perspective",
+    description:
+      "Platform interaktif penemuan fakta unik, kuis AI, dan teka-teki silang pengetahuan umum.",
+    siteName: "Mind.Maze",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Mind.Maze — Small Facts, Big Perspective",
+    description: "Platform interaktif penemuan fakta unik, kuis AI, dan teka-teki silang.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
 };
 
 export default function RootLayout({
