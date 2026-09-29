@@ -1,12 +1,12 @@
-// Multi-Layered AI Service with resilient fallback layers
+// Multi-Layered AI Service directly grounded in Mind.Maze's 16 Published Fact Articles
+import { INITIAL_ARTICLES } from "@/data/mockData";
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY || "";
 
-// Hierarchical AI models
 const AI_LAYERS = [
-  { model: "groq/compound", name: "Sistem Cerdas" },
-  { model: "groq/compound-mini", name: "Sistem Cerdas" },
-  { model: "qwen/qwen3.8-27b", name: "Sistem Cerdas" },
+  { model: "llama-3.3-70b-versatile", name: "Sistem Cerdas" },
+  { model: "llama-3.1-8b-instant", name: "Sistem Cerdas" },
+  { model: "mixtral-8x7b-32768", name: "Sistem Cerdas" },
 ];
 
 export interface AICrosswordWord {
@@ -44,9 +44,16 @@ export interface AIQuizResult {
   layer: number;
 }
 
-/**
- * Executes a prompt across multiple AI layers with automatic fallback.
- */
+// Compact context string generated from the actual 16 articles
+function getArticlesContext(): string {
+  return INITIAL_ARTICLES.map(
+    (a, idx) =>
+      `${idx + 1}. [${a.category}] "${a.title}": ${a.shortSummary}. ` +
+      (a.crosswordClue ? `Kata kunci: ${a.crosswordClue.word} (${a.crosswordClue.clue}). ` : "") +
+      (a.triviaPopup ? `Trivia: ${a.triviaPopup.text}.` : "")
+  ).join("\n");
+}
+
 async function callGroqLayers(
   messages: Array<{ role: string; content: string }>,
   responseFormatJson: boolean = true
@@ -57,7 +64,7 @@ async function callGroqLayers(
       const payload: any = {
         model: layer.model,
         messages,
-        temperature: 0.3,
+        temperature: 0.2,
         max_tokens: 1500,
       };
 
@@ -85,12 +92,12 @@ async function callGroqLayers(
           };
         }
       }
-    } catch (err) {
-      console.warn(`Layer ${i + 1} (${layer.model}) gagal, beralih ke layer cadangan...`);
+    } catch {
+      // Continue to next layer
     }
   }
 
-  throw new Error("Sistem AI sedang sibuk. Silakan coba sesaat lagi.");
+  throw new Error("Sistem AI sedang sibuk. Menggunakan bank soal artikel Mind.Maze.");
 }
 
 function cleanJsonText(raw: string): string {
@@ -107,52 +114,46 @@ function cleanJsonText(raw: string): string {
 }
 
 /**
- * Generates an interlocking 2D Crossword Puzzle where AI decides optimal word count.
+ * Generates an interlocking 2D Crossword Puzzle GROUNDED STRICTLY on Mind.Maze articles.
  */
 export async function generateAICrossword(
   category: string = "Semua Kategori",
   wordCount?: number
 ): Promise<AICrosswordResult> {
-  const countInstruction = wordCount
-    ? `Buatlah ${wordCount} kata`
-    : `Tentukan sendiri jumlah kata yang optimal dan kaya wawasan menurut Anda (buat antara 3 hingga 5 kata yang saling berpotongan/interlocking)`;
+  const articlesContext = getArticlesContext();
 
-  const themeInstruction =
-    category === "Semua Kategori"
-      ? "mengambil fakta edukatif dari beragam domain ilmu (Sains, Teknologi, Sejarah, Bahasa, Alam, Seni)"
-      : `dengan tema "${category}"`;
-
-  const prompt = `Anda adalah generator Teka-Teki Silang (TTS) edukatif bahasa Indonesia untuk platform Mind.Maze.
-${countInstruction} ${themeInstruction}. Biarkan Anda (AI) yang memutuskan jumlah kata dan struktur silang terbaik.
+  const prompt = `Anda adalah master Teka-Teki Silang (TTS) edukatif untuk platform Mind.Maze.
+Tugas Anda adalah menyusun Teka-Teki Silang yang DIAMBIL KHUSUS DAN HANYA DARI ARTIKEL-ARTIKEL RESMI MIND.MAZE BERIKUT:
+${articlesContext}
 
 Aturan Ketat:
-1. Setiap kata harus berupa 1 KATA BENDA / FAKTA BAHASA INDONESIA yang valid (HANYA HURUF KAPITAL A-Z, tanpa spasi, tanpa angka, tanpa tanda hubung).
-2. Terdapat kata MENDATAR (direction: "across") dan kata MENURUN (direction: "down").
-3. Kata-kata tersebut HARUS saling berpotongan (interlocking) di 1 huruf yang sama pada baris (startRow) dan kolom (startCol) koordinat 0-indexed yang konsisten dan akurat.
-4. Tentukan ukuran grid { rows, cols } yang cukup memuat seluruh kata tanpa terpotong (misalnya 7 baris x 8 kolom atau 8 baris x 10 kolom).
-5. Petunjuk (clue) harus informatif, ringkas, dan mendidik.
+1. Kata jawaban dan petunjuk (clue) HARUS diambil dari isi fakta artikel di atas (contoh: BLUETOOTH, FLEMING, QWERTY, LOUVRE, PERSIA, ORANYE, PLACEBO, dsb).
+2. Setiap kata harus berupa 1 KATA BAHASA INDONESIA / NAMA YANG VALID (HURUF KAPITAL A-Z, tanpa spasi, tanpa angka).
+3. Buatlah minimal 2 hingga 4 kata saling berpotongan (interlocking) pada baris (startRow) dan kolom (startCol) koordinat 0-indexed yang konsisten dan akurat.
+4. Tentukan ukuran grid { rows, cols } yang cukup memuat kata.
+5. Clue harus spesifik merujuk fakta pada artikel Mind.Maze.
 
-Kembalikan HANYA format JSON valid berikut tanpa penjelasan tambahan di luar JSON:
+Format JSON yang wajib dikembalikan:
 {
-  "title": "Teka-Teki Silang: ${category}",
+  "title": "Teka-Teki Silang Fakta Mind.Maze",
   "category": "${category}",
-  "grid": { "rows": 7, "cols": 8 },
+  "grid": { "rows": 8, "cols": 10 },
   "words": [
     {
       "number": 1,
       "direction": "across",
-      "word": "KOMPUTER",
-      "clue": "Perangkat pemroses data elektronik.",
+      "word": "BLUETOOTH",
+      "clue": "Teknologi nirkabel yang dinamai dari Raja Viking abad ke-10 Harald Gormsson.",
       "startRow": 1,
       "startCol": 0
     },
     {
       "number": 2,
       "direction": "down",
-      "word": "PROTON",
-      "clue": "Partikel subatomik bermuatan positif di inti atom.",
+      "word": "LOUVRE",
+      "clue": "Museum ternama di Paris tempat lukisan Mona Lisa dicuri pada tahun 1911.",
       "startRow": 1,
-      "startCol": 3
+      "startCol": 1
     }
   ]
 }`;
@@ -162,7 +163,7 @@ Kembalikan HANYA format JSON valid berikut tanpa penjelasan tambahan di luar JSO
       {
         role: "system",
         content:
-          "Anda adalah generator Teka-Teki Silang profesional berbahasa Indonesia. Kembalikan selalu format JSON murni.",
+          "Anda adalah master TTS edukatif bahasa Indonesia yang selalu menyusun teka-teki silang berdasarkan fakta artikel Mind.Maze yang disediakan. Selalu respon dengan format JSON murni.",
       },
       { role: "user", content: prompt },
     ]);
@@ -171,61 +172,52 @@ Kembalikan HANYA format JSON valid berikut tanpa penjelasan tambahan di luar JSO
     const parsed = JSON.parse(cleaned);
     if (parsed.words && Array.isArray(parsed.words) && parsed.words.length > 0) {
       return {
-        title: parsed.title || `Teka-Teki Silang: ${category}`,
+        title: parsed.title || `Teka-Teki Silang: Fakta Mind.Maze`,
         category: parsed.category || category,
-        grid: parsed.grid || { rows: 7, cols: 8 },
+        grid: parsed.grid || { rows: 8, cols: 10 },
         words: parsed.words,
         modelUsed: "Sistem Cerdas",
         layer: result.layer,
       };
     }
-  } catch (err) {
-    console.warn("Semua layer online tidak merespons, mengaktifkan safety net lokal...");
+  } catch {
+    // Fallback to grounded local crossword
   }
 
-  // Resilient Local Safety Net
   return getLocalFallbackCrossword(category);
 }
 
 /**
- * Generates Multiple-Choice Trivia Quiz where AI dynamically decides the number of questions,
- * pulling references across ALL categories (Sains, Teknologi, Psikologi, Sejarah, Ekonomi, Seni).
+ * Generates Multiple-Choice Trivia Quiz GROUNDED STRICTLY on Mind.Maze articles.
  */
 export async function generateAIQuiz(
   category: string = "Semua Kategori",
-  count?: number
+  count: number = 6
 ): Promise<AIQuizResult> {
-  const countInstruction = count
-    ? `Buatlah ${count} pertanyaan kuis`
-    : `Tentukan sendiri jumlah pertanyaan yang banyak, kaya wawasan, dan menantang (buat antara 5 hingga 8 pertanyaan pilihan ganda berbobot)`;
+  const articlesContext = getArticlesContext();
 
-  const prompt = `Anda adalah master kuis trivia edukasi bahasa Indonesia untuk platform Mind.Maze.
-${countInstruction} dengan mengambil referensi secara merata dan kaya dari SEMUA KATEGORI pengetahuan Mind.Maze:
-- Sains & Alam (Science)
-- Teknologi & Komputasi (Technology)
-- Psikologi & Pikiran (Psychology)
-- Sejarah & Peradaban (History)
-- Ekonomi & Pasar Global (Economy)
-- Seni & Kebudayaan (Art & Culture)
+  const prompt = `Anda adalah master kuis trivia resmi untuk platform Mind.Maze.
+Buatlah ${count} pertanyaan kuis pilihan ganda yang DIANGKAT LANGSUNG DARI ARTIKEL-ARTIKEL RESMI MIND.MAZE BERIKUT:
+${articlesContext}
 
-Aturan:
-1. Jangan membatasi hanya pada 1 topik. Variasikan setiap nomor pertanyaan dari bidang kategori yang berbeda secara seimbang agar mencakup seluruh spektrum wawasan multidisiplin.
-2. Setiap pertanyaan harus memiliki 4 opsi jawaban (A, B, C, D) dengan 1 jawaban benar.
-3. Berikan penjelasan singkat, mendalam, dan edukatif di setiap nomor.
-4. Sertakan field "category" pada setiap nomor soal yang menandakan rumpun ilmunya (contoh: "Sains", "Teknologi", "Psikologi", "Sejarah", "Ekonomi", "Seni & Budaya").
+Aturan Mutlak:
+1. SETIAP SOAL HARUS MENGUJI FAKTA DARI ARTIKEL DI ATAS (misalnya tentang sejarah wortel ungu, asal nama Bluetooth raja Viking, penemuan penisilin Alexander Fleming, pencurian Mona Lisa di Louvre 1911, mesin tik QWERTY Christopher Sholes, dryad pada mitos ketuk kayu, dsb).
+2. Setiap pertanyaan harus memiliki 4 opsi jawaban dengan 1 jawaban benar.
+3. Berikan "explanation" yang mendidik dan mengacu pada penjelasan di artikel.
+4. Sertakan "category" yang sesuai dari kategori Mind.Maze ("Asal-Usul Benda", "Mitos Populer", "Peristiwa Bersejarah", "Sains & Tubuh Manusia").
 
-Format JSON yang wajib dikembalikan (HANYA JSON murni tanpa pembungkus luar):
+Format JSON yang wajib dikembalikan:
 {
-  "title": "Kuis Trivia Multidisiplin",
-  "category": "Semua Kategori",
+  "title": "Kuis Trivia Fakta Mind.Maze",
+  "category": "${category}",
   "questions": [
     {
       "id": 1,
-      "question": "Pertanyaan trivia unik dan berbobot...",
-      "options": ["Pilihan A", "Pilihan B", "Pilihan C", "Pilihan D"],
+      "question": "Warna asli wortel liar sebelum didomestikasi dan dibiakkan menjadi oranye di Belanda adalah...",
+      "options": ["Ungu dan Kuning", "Merah dan Biru", "Hitam dan Cokelat", "Hijau Terang"],
       "correctIndex": 0,
-      "explanation": "Penjelasan ilmiah atau sejarah singkat mengapa jawaban tersebut benar.",
-      "category": "Sains"
+      "explanation": "Wortel awal yang didomestikasi di Dataran Tinggi Iran abad ke-10 adalah varietas ungu dan kuning. Warna oranye baru distabilkan petani Belanda abad ke-17 untuk menghormati William of Orange.",
+      "category": "Asal-Usul Benda"
     }
   ]
 }`;
@@ -235,7 +227,7 @@ Format JSON yang wajib dikembalikan (HANYA JSON murni tanpa pembungkus luar):
       {
         role: "system",
         content:
-          "Anda adalah master kuis edukatif berbahasa Indonesia. Selalu respon dalam format JSON yang valid.",
+          "Anda adalah penguji kuis trivia interaktif untuk platform Mind.Maze. Semua soal Anda harus berakar pada 16 artikel fakta yang disediakan. Selalu balas dalam format JSON murni.",
       },
       { role: "user", content: prompt },
     ]);
@@ -244,201 +236,189 @@ Format JSON yang wajib dikembalikan (HANYA JSON murni tanpa pembungkus luar):
     const parsed = JSON.parse(cleanedText);
     if (parsed.questions && Array.isArray(parsed.questions) && parsed.questions.length > 0) {
       return {
-        title: parsed.title || "Kuis Trivia Multidisiplin",
+        title: parsed.title || "Kuis Trivia Fakta Mind.Maze",
         category: parsed.category || "Semua Kategori",
         questions: parsed.questions,
         modelUsed: "Sistem Cerdas",
         layer: result.layer,
       };
     }
-  } catch (err) {
-    console.warn("Semua layer online tidak merespons, mengaktifkan safety net kuis lokal...");
+  } catch {
+    // Fallback to grounded local quiz
   }
 
-  // Resilient Local Quiz Safety Net
   return getLocalFallbackQuiz(category);
 }
 
 /**
- * Resilient Fallback Puzzles (Zero-failure safety net)
+ * High-quality fallback crossword derived directly from Mind.Maze articles
  */
 function getLocalFallbackCrossword(category: string): AICrosswordResult {
-  const presets: { [key: string]: AICrosswordResult } = {
-    Technology: {
-      title: "Teka-Teki Silang: Teknologi & Komputasi",
-      category: "Technology",
-      grid: { rows: 6, cols: 8 },
-      words: [
-        {
-          number: 1,
-          direction: "across",
-          word: "KOMPUTER",
-          clue: "Perangkat pemroses data dan kalkulasi astronomi kuno Antikythera.",
-          startRow: 1,
-          startCol: 0,
-        },
-        {
-          number: 2,
-          direction: "down",
-          word: "PROTON",
-          clue: "Partikel subatomik bermuatan positif yang berpotongan pada huruf P.",
-          startRow: 1,
-          startCol: 3,
-        },
-      ],
-      modelUsed: "Sistem Cerdas",
-      layer: 4,
-    },
-    Science: {
-      title: "Teka-Teki Silang: Sains & Alam",
-      category: "Science",
-      grid: { rows: 6, cols: 8 },
-      words: [
-        {
-          number: 1,
-          direction: "across",
-          word: "ATMOSFER",
-          clue: "Lapisan gas bumi tempat molekul menyebarkan cahaya matahari.",
-          startRow: 1,
-          startCol: 0,
-        },
-        {
-          number: 2,
-          direction: "down",
-          word: "SURYA",
-          clue: "Sebutan lain untuk matahari, sumber cahaya dan energi utama.",
-          startRow: 1,
-          startCol: 4,
-        },
-      ],
-      modelUsed: "Sistem Cerdas",
-      layer: 4,
-    },
+  return {
+    title: "Teka-Teki Silang Fakta Mind.Maze",
+    category: category,
+    grid: { rows: 9, cols: 10 },
+    words: [
+      {
+        number: 1,
+        direction: "across",
+        word: "BLUETOOTH",
+        clue: "Teknologi nirkabel yang dinamai dari Raja Viking abad ke-10 Harald Gormsson.",
+        startRow: 1,
+        startCol: 0,
+      },
+      {
+        number: 2,
+        direction: "down",
+        word: "LOUVRE",
+        clue: "Museum Paris tempat lukisan Mona Lisa dicuri oleh Vincenzo Peruggia pada tahun 1911.",
+        startRow: 1,
+        startCol: 1,
+      },
+      {
+        number: 3,
+        direction: "down",
+        word: "QWERTY",
+        clue: "Tata letak keyboard ciptaan Christopher Sholes 1873 untuk mencegah tabrakan tuas mesin tik.",
+        startRow: 1,
+        startCol: 8,
+      },
+    ],
+    modelUsed: "Kurasi Fakta Mind.Maze",
+    layer: 4,
   };
-
-  return (
-    presets[category] || {
-      title: `Teka-Teki Silang: ${category}`,
-      category: category,
-      grid: { rows: 6, cols: 8 },
-      words: [
-        {
-          number: 1,
-          direction: "across",
-          word: "MEMORI",
-          clue: "Daya ingat kognitif yang menyimpan pengalaman masa lalu.",
-          startRow: 1,
-          startCol: 1,
-        },
-        {
-          number: 2,
-          direction: "down",
-          word: "OTAK",
-          clue: "Organ vital pengendali sistem saraf dan pikiran manusia.",
-          startRow: 1,
-          startCol: 3,
-        },
-      ],
-      modelUsed: "Sistem Cerdas",
-      layer: 4,
-    }
-  );
 }
 
+/**
+ * 100% grounded fallback quiz testing actual Mind.Maze published articles
+ */
 function getLocalFallbackQuiz(category: string = "Semua Kategori"): AIQuizResult {
   return {
-    title: "Kuis Trivia Multidisiplin: Semua Kategori",
-    category: "Semua Kategori",
+    title: "Kuis Trivia Fakta Mind.Maze",
+    category: category,
     questions: [
       {
         id: 1,
-        question: "Mengapa langit pada siang hari tampak berwarna biru?",
+        question:
+          "Warna asli wortel sebelum dibiakkan menjadi dominan oranye oleh petani Belanda pada abad ke-17 adalah:",
         options: [
-          "Pantulan air laut",
-          "Hamburan Rayleigh oleh partikel gas udara",
-          "Emisi gas ozon",
-          "Lapisan awan tipis",
+          "Ungu dan Kuning",
+          "Merah dan Putih",
+          "Biru dan Cokelat",
+          "Hijau Terang",
         ],
-        correctIndex: 1,
+        correctIndex: 0,
         explanation:
-          "Molekul udara di atmosfer bumi lebih banyak menyebarkan cahaya biru yang memiliki panjang gelombang lebih pendek daripada warna lain (Hamburan Rayleigh).",
-        category: "Sains",
+          "Wortel awal yang didomestikasi di Persia abad ke-10 terdiri dari varietas ungu (mengandung antosianin) dan kuning. Petani Belanda abad ke-17 memuliakan varietas oranye untuk menghormati Wangsa Oranje (William of Orange).",
+        category: "Asal-Usul Benda",
       },
       {
         id: 2,
-        question: "Perangkat apakah yang disebut sebagai komputer analog tertua dari abad ke-2 SM yang ditemukan di dasar laut Yunani?",
+        question:
+          "Siapakah tokoh sejarah yang menjadi inspirasi nama dan logo teknologi nirkabel 'Bluetooth'?",
         options: [
-          "Abakus Romawi",
-          "Mekanisme Antikythera",
-          "Jam Pasir Alexandria",
-          "Astrolabe Babilonia",
+          "Raja Harald Bluetooth Gormsson",
+          "Kaisar Napoleon Bonaparte",
+          "Raja Louis XIV dari Prancis",
+          "Gideon Sundback",
         ],
-        correctIndex: 1,
+        correctIndex: 0,
         explanation:
-          "Mekanisme Antikythera memiliki lebih dari 30 roda gigi perunggu presisi yang mampu menghitung pergerakan kosmik ribuan tahun lalu.",
-        category: "Teknologi",
+          "Jim Kardach dari Intel mengusulkan nama Harald Bluetooth, raja Viking abad ke-10 yang menyatukan Skandinavia. Logonya merupakan gabungan bindrune huruf Hagalaz (ᚼ) dan Berkanan (ᛒ).",
+        category: "Asal-Usul Benda",
       },
       {
         id: 3,
-        question: "Fenomena tiba-tiba lupa tujuan saat melangkah ke ruangan baru dinamakan:",
+        question:
+          "Pada tahun 1911, lukisan mahakarya Mona Lisa karya Leonardo da Vinci sempat dicuri dari museum:",
         options: [
-          "Doorway Effect",
-          "Tunnel Vision",
-          "Déjà Vu",
-          "Placebo Reset",
+          "Museum Louvre, Paris",
+          "The British Museum, London",
+          "Museum Hermitage, St. Petersburg",
+          "Museum Prado, Madrid",
         ],
         correctIndex: 0,
         explanation:
-          "Doorway Effect terjadi karena pintu bertindak sebagai batas peristiwa (event boundary) yang membuat otak mengarsipkan memori ruangan sebelumnya.",
-        category: "Psikologi",
+          "Vincenzo Peruggia, mantan pekerja kaca di Louvre, menyembunyikan Mona Lisa di balik mantelnya pada 21 Agustus 1911. Pencurian spektakuler ini yang membuat Mona Lisa mendunia.",
+        category: "Peristiwa Bersejarah",
       },
       {
         id: 4,
-        question: "Berapa persen oksigen di atmosfer bumi yang dihasilkan oleh organisme laut (fitoplankton)?",
-        options: ["Sekitar 10-20%", "Sekitar 30-40%", "Sekitar 50-80%", "Hampir 99%"],
-        correctIndex: 2,
+        question:
+          "Apa alasan ilmiah mengapa kuku dan rambut tampak memanjang pada jenazah manusia setelah meninggal?",
+        options: [
+          "Sel kuku terus membelah selama 30 hari",
+          "Ilusi optik akibat retraksi dan dehidrasi jaringan kulit",
+          "Pertumbuhan folikel rambut akibat enzim sisa",
+          "Peningkatan sirkulasi darah pasca henti jantung",
+        ],
+        correctIndex: 1,
         explanation:
-          "Mayoritas oksigen di planet kita (antara 50% hingga 80%) diproduksi oleh fitoplankton dan fotosintesis laut, bukan dari hutan daratan saja.",
-        category: "Sains",
+          "Menurut riset dr. Rachel Vreeman di British Medical Journal, kematian menghentikan suplai glukosa seketika. Kulit di sekitar rambut dan kuku menyusut akibat dehidrasi, sehingga kuku terlihat memanjang padahal tidak tumbuh sama sekali.",
+        category: "Mitos Populer",
       },
       {
         id: 5,
-        question: "Prinsip komputasi kuantum di mana data qubit dapat bernilai 0 dan 1 sekaligus disebut:",
-        options: ["Quantum Superposition", "Binary Singularity", "Parallel Cache", "Entanglement Shift"],
-        correctIndex: 0,
+        question:
+          "Mengapa Christopher Sholes menyusun keyboard dengan format QWERTY pada mesin tik tahun 1873?",
+        options: [
+          "Agar kecepatan mengetik manusia mencapai rekor tertinggi",
+          "Mencegah tabrakan mekanis antar tuas huruf yang sering ditekan berurutan",
+          "Mengikuti urutan abjad Yunani kuno",
+          "Instruksi khusus dari militer telegraf Amerika Serikat",
+        ],
+        correctIndex: 1,
         explanation:
-          "Superposisi kuantum memungkinkan qubit memproses sejumlah besar probabilitas secara simultan sebelum diobservasi.",
-        category: "Teknologi",
+          "Pada mesin tik mekanik awal, pengetikan yang terlalu cepat menyebabkan tuas huruf saling bertabrakan dan macet. Sholes memisahkan pasangan huruf yang sering berurutan (seperti T-H dan S-T) guna mencegah tabrakan tuas.",
+        category: "Asal-Usul Benda",
       },
       {
         id: 6,
-        question: "Peristiwa gelembung ekonomi pertama yang tercatat dalam sejarah dunia pada abad ke-17 di Belanda adalah:",
-        options: ["South Sea Bubble", "Tulip Mania (Demam Tulip)", "Mississippi Scheme", "The Great Depreseed"],
-        correctIndex: 1,
+        question:
+          "Siapakah ilmuwan yang secara tidak sengaja menemukan penisilin dari cawan petri yang terkontaminasi jamur Penicillium notatum pada 1928?",
+        options: [
+          "Alexander Fleming",
+          "Louis Pasteur",
+          "Robert Koch",
+          "Edward Jenner",
+        ],
+        correctIndex: 0,
         explanation:
-          "Tulip Mania (1637) terjadi ketika harga umbi tulip langka melambung hingga menyamai harga rumah mewah sebelum akhirnya jatuh drastis.",
-        category: "Ekonomi",
+          "Dr. Alexander Fleming menemukan cawan petri bakteri Staphylococcus miliknya tertutup jamur Penicillium notatum yang membentuk zona bebas bakteri, menjadi awal mula era antibiotik modern.",
+        category: "Peristiwa Bersejarah",
       },
       {
         id: 7,
-        question: "Teknik lukisan legendaris Leonardo da Vinci yang memadukan gradasi warna tanpa garis batas tegas dinamakan:",
-        options: ["Chiaroscuro", "Sfumato", "Impasto", "Fresco"],
-        correctIndex: 1,
+        question:
+          "Akar tradisi mengetuk kayu (knock on wood) untuk menolak bala berasal dari kepercayaan animisme bangsa kuno terhadap:",
+        options: [
+          "Dryad atau roh pelindung yang bersemayam di dalam pepohonan",
+          "Dewa petir Thor yang memegang palu kayu",
+          "Ritual pedagang sutra Cina untuk menguji kualitas kayu kapal",
+          "Peraturan arsitektur kuil batu Yunani",
+        ],
+        correctIndex: 0,
         explanation:
-          "Sfumato (berasal dari kata Italia 'berasap') menciptakan transisi lembut antara warna dan bayangan, seperti yang terlihat pada senyum Mona Lisa.",
-        category: "Seni & Budaya",
+          "Bangsa Celtic dan suku Jerman kuno meyakini pohon-pohon besar dihuni oleh Dryad (roh pohon). Mengetuk batang kayu dilakukan untuk meminta perlindungan atau berterima kasih atas keberuntungan yang diterima.",
+        category: "Mitos Populer",
       },
       {
         id: 8,
-        question: "Pustaka kuno legendaris manakah di era Helenistik yang pernah menjadi pusat penyimpanan seluruh naskah ilmu pengetahuan dunia kuno?",
-        options: ["Perpustakaan Alexandria", "Perpustakaan Ashurbanipal", "Perpustakaan Pergamon", "House of Wisdom Baghdad"],
+        question:
+          "Apa peristiwa tragis yang mendasari Presiden AS Ronald Reagan membuka teknologi navigasi GPS untuk publik dunia pada 1983?",
+        options: [
+          "Penembakan pesawat komersil Korean Air Lines Penerbangan 007",
+          "Krisis Selat Malaka pada era Perang Dingin",
+          "Tenggelamnya kapal selam nuklir K-129",
+          "Bencana pendaratan darurat Apollo 13",
+        ],
         correctIndex: 0,
         explanation:
-          "Perpustakaan Besar Alexandria di Mesir menampung ratusan ribu gulungan papirus papirus filsafat, matematika, dan sains kuno.",
-        category: "Sejarah",
+          "Pesawat sipil KAL 007 ditembak jatuh jet tempur Soviet setelah tersesat akibat navigasi autopilot yang melenceng. Presiden Reagan mengeluarkan arahan agar sistem militer Navstar GPS dibuka gratis untuk sipil seluruh dunia demi keselamatan penerbangan.",
+        category: "Peristiwa Bersejarah",
       },
     ],
-    modelUsed: "Sistem Cerdas",
+    modelUsed: "Kurasi Fakta Mind.Maze",
     layer: 4,
   };
 }

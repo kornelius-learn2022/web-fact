@@ -14,6 +14,7 @@ import {
   PlusCircle,
   Users,
   UserPlus,
+  UserCheck,
   Tag,
   Flame,
   Check,
@@ -77,6 +78,7 @@ export default function AdminDashboardPage() {
     role: "Admin" | "Kontributor";
     avatarColor: string;
     createdAt: string;
+    status?: "pending" | "approved" | "rejected";
   }
   const [dbUsers, setDbUsers] = useState<AdminUser[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
@@ -85,6 +87,10 @@ export default function AdminDashboardPage() {
   const [newUserPassword, setNewUserPassword] = useState("");
   const [newUserRole, setNewUserRole] = useState<"Admin" | "Kontributor">("Kontributor");
   const [isSubmittingUser, setIsSubmittingUser] = useState(false);
+
+  // Sources reference state for articles
+  const [sourcesInput, setSourcesInput] = useState("");
+  const [editSourcesInput, setEditSourcesInput] = useState("");
 
   const fetchUsers = async () => {
     if (!token) return;
@@ -145,6 +151,53 @@ export default function AdminDashboardPage() {
       showNotification("Gagal terhubung ke server.");
     } finally {
       setIsSubmittingUser(false);
+    }
+  };
+
+  const handleApproveUser = async (id: string, name: string) => {
+    if (!token) return;
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ id, status: "approved" }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showNotification(`Akun ${name} berhasil disetujui! ✅`);
+        fetchUsers();
+      } else {
+        showNotification(data.message || "Gagal menyetujui akun.");
+      }
+    } catch {
+      showNotification("Terjadi kendala jaringan.");
+    }
+  };
+
+  const handleRejectUser = async (id: string, name: string) => {
+    if (!token) return;
+    if (!confirm(`Tolak pendaftaran akun "${name}"?`)) return;
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ id, status: "rejected" }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showNotification(`Pendaftaran akun ${name} ditolak.`);
+        fetchUsers();
+      } else {
+        showNotification(data.message || "Gagal menolak akun.");
+      }
+    } catch {
+      showNotification("Terjadi kendala jaringan.");
     }
   };
 
@@ -228,12 +281,17 @@ export default function AdminDashboardPage() {
     if (!title || !content || !shortSummary) return;
 
     const selectedCategory = categories.find((c) => c.slug === categorySlug);
+    const parsedSources = sourcesInput
+      .split("\n")
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+
     const res = addArticle(
       {
         title,
         highlightWord,
         highlightColor: "#CFFF04",
-        category: selectedCategory ? selectedCategory.name : "Technology",
+        category: selectedCategory ? selectedCategory.name : "Asal-Usul Benda Sehari-hari",
         categorySlug,
         readTime,
         shortSummary,
@@ -242,6 +300,7 @@ export default function AdminDashboardPage() {
           imageUrl ||
           "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1200&q=80",
         isHotPick,
+        sources: parsedSources.length > 0 ? parsedSources : undefined,
         triviaPopup: triviaText ? { title: triviaTitle, text: triviaText } : undefined,
         crosswordClue: crosswordWord
           ? { word: crosswordWord.toUpperCase().trim(), clue: crosswordClue }
@@ -257,6 +316,7 @@ export default function AdminDashboardPage() {
       setShortSummary("");
       setContent("");
       setImageUrl("");
+      setSourcesInput("");
       setTriviaText("");
       setCrosswordWord("");
       setCrosswordClue("");
@@ -269,16 +329,23 @@ export default function AdminDashboardPage() {
     e.preventDefault();
     if (!editingArticle) return;
 
+    const parsedSources = editSourcesInput
+      .split("\n")
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+
     const res = updateArticle(
       editingArticle.id,
       {
         title: editingArticle.title,
         shortSummary: editingArticle.shortSummary,
         content: editingArticle.content,
+        imageUrl: editingArticle.imageUrl,
         categorySlug: editingArticle.categorySlug,
         category:
           categories.find((c) => c.slug === editingArticle.categorySlug)?.name ||
           editingArticle.category,
+        sources: parsedSources.length > 0 ? parsedSources : editingArticle.sources,
       },
       user
     );
@@ -649,7 +716,10 @@ export default function AdminDashboardPage() {
                             </Link>
 
                             <button
-                              onClick={() => setEditingArticle(art)}
+                              onClick={() => {
+                                setEditingArticle(art);
+                                setEditSourcesInput((art.sources || []).join("\n"));
+                              }}
                               className="rounded-xl bg-white/10 p-2 text-cyber-lime hover:bg-cyber-lime/20"
                               title="Edit Artikel"
                             >
@@ -817,6 +887,23 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
 
+                {/* Sumber Referensi */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-300 mb-1">
+                    🔗 Sumber & Referensi Ilmiah / Sejarah (1 tautan per baris)
+                  </label>
+                  <textarea
+                    rows={3}
+                    placeholder="https://smithsonianmag.com/...&#10;https://britannica.com/...&#10;Buku / Dokumen Referensi"
+                    value={sourcesInput}
+                    onChange={(e) => setSourcesInput(e.target.value)}
+                    className="w-full rounded-2xl border border-white/20 bg-black/60 p-3 text-xs text-white focus:border-cyan-400 focus:outline-none"
+                  />
+                  <p className="text-[11px] text-gray-400 mt-1">
+                    Tautan akan ditampilkan di bagian bawah artikel sebagai rujukan terpercaya pembaca.
+                  </p>
+                </div>
+
                 {/* Hot Pick Checkbox */}
                 <div className="flex items-center gap-3 pt-2">
                   <input
@@ -844,18 +931,73 @@ export default function AdminDashboardPage() {
 
           {/* TAB 4: KELOLA PENGGUNA & KONTRIBUTOR */}
           {activeTab === "contributors" && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-              {/* Left Column: Form Tambah Pengguna Baru */}
-              <div className="lg:col-span-5 rounded-3xl border border-white/10 bg-[#1c1c1c] p-6 shadow-xl">
-                <div className="flex items-center gap-2 mb-2 text-cyber-lime">
-                  <UserPlus className="h-5 w-5" />
-                  <h3 className="text-lg font-black text-white">Tambah Pengguna Baru</h3>
+            <div className="space-y-8">
+              {/* Antrean Persetujuan Kontributor Baru */}
+              {dbUsers.filter((u) => u.status === "pending").length > 0 && (
+                <div className="rounded-3xl border border-amber-400/40 bg-amber-400/10 p-6 shadow-xl animate-in fade-in">
+                  <div className="flex items-center gap-2 mb-2 text-amber-400">
+                    <UserCheck className="h-5 w-5" />
+                    <h3 className="text-lg font-black text-white">
+                      Antrean Persetujuan Pendaftaran Akun Kontributor ({dbUsers.filter((u) => u.status === "pending").length})
+                    </h3>
+                  </div>
+                  <p className="text-xs text-gray-300 mb-5">
+                    Calon kontributor berikut mendaftar mandiri via halaman registrasi dan menunggu persetujuan Administrator agar dapat login ke sistem.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {dbUsers
+                      .filter((u) => u.status === "pending")
+                      .map((u) => (
+                        <div
+                          key={u.id}
+                          className="rounded-2xl border border-white/10 bg-[#1e1e1e] p-5 flex flex-col justify-between shadow-md"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`flex h-11 w-11 items-center justify-center rounded-xl text-base font-black text-black ${u.avatarColor}`}
+                            >
+                              {u.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="overflow-hidden">
+                              <h4 className="font-bold text-white text-sm truncate">{u.name}</h4>
+                              <p className="text-xs text-gray-400 truncate">{u.email}</p>
+                              <span className="inline-block mt-1 rounded-full bg-amber-400/20 px-2.5 py-0.5 text-[10px] font-bold text-amber-300">
+                                ⏳ Menunggu Persetujuan
+                              </span>
+                            </div>
+                          </div>
+                          <div className="mt-4 pt-3 border-t border-white/10 flex items-center gap-2">
+                            <button
+                              onClick={() => handleApproveUser(u.id, u.name)}
+                              className="flex-1 rounded-full bg-cyber-lime py-2 text-xs font-black text-black hover:brightness-110 active:scale-95 transition-all"
+                            >
+                              ✓ Setujui Akun
+                            </button>
+                            <button
+                              onClick={() => handleRejectUser(u.id, u.name)}
+                              className="rounded-full border border-red-500/40 bg-red-500/20 px-4 py-2 text-xs font-bold text-red-300 hover:bg-red-500 hover:text-white transition-all"
+                            >
+                              ✕ Tolak
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
                 </div>
-                <p className="text-xs text-gray-400 mb-6">
-                  Daftarkan akun pengguna baru ke database Vercel Postgres agar mereka dapat login dan berkontribusi.
-                </p>
+              )}
 
-                <form onSubmit={handleAddUser} className="space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                {/* Left Column: Form Tambah Pengguna Baru */}
+                <div className="lg:col-span-5 rounded-3xl border border-white/10 bg-[#1c1c1c] p-6 shadow-xl">
+                  <div className="flex items-center gap-2 mb-2 text-cyber-lime">
+                    <UserPlus className="h-5 w-5" />
+                    <h3 className="text-lg font-black text-white">Tambah Pengguna Baru</h3>
+                  </div>
+                  <p className="text-xs text-gray-400 mb-6">
+                    Daftarkan akun pengguna baru ke database Vercel Postgres agar mereka dapat login dan berkontribusi.
+                  </p>
+
+                  <form onSubmit={handleAddUser} className="space-y-4">
                   <div>
                     <label className="block text-xs font-bold text-gray-300 mb-1">
                       Nama Lengkap
@@ -1006,7 +1148,8 @@ export default function AdminDashboardPage() {
                 )}
               </div>
             </div>
-          )}
+          </div>
+        )}
 
           {/* TAB 5: KELOLA KATEGORI */}
           {activeTab === "categories" && (
@@ -1183,6 +1326,19 @@ export default function AdminDashboardPage() {
                         setEditingArticle({ ...editingArticle, content: e.target.value })
                       }
                       className="w-full rounded-xl border border-white/20 bg-black/60 p-2.5 text-xs text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-300 mb-1">
+                      🔗 Sumber & Referensi Ilmiah / Sejarah (1 per baris)
+                    </label>
+                    <textarea
+                      rows={2}
+                      placeholder="https://..."
+                      value={editSourcesInput}
+                      onChange={(e) => setEditSourcesInput(e.target.value)}
+                      className="w-full rounded-xl border border-white/20 bg-black/60 p-2.5 text-xs text-white focus:outline-none"
                     />
                   </div>
 

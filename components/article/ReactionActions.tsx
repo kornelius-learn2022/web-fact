@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Bookmark, Share2, Check, Sparkles } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -17,11 +18,25 @@ export default function ReactionActions({
   initialReactions,
   articleTitle,
 }: ReactionActionsProps) {
+  const router = useRouter();
   const { user } = useAuth();
   const [reactions, setReactions] = useState(initialReactions);
   const [selectedReaction, setSelectedReaction] = useState<string | null>(null);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user?.email) {
+      try {
+        const saved = localStorage.getItem(
+          `mindmaze_bookmark_${user.email}_${articleTitle}`
+        );
+        if (saved === "true") {
+          setIsBookmarked(true);
+        }
+      } catch {}
+    }
+  }, [user, articleTitle]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -49,16 +64,22 @@ export default function ReactionActions({
 
   const handleBookmark = () => {
     if (!user) {
-      showToast("🔒 Perlu Akun: Masuk atau Daftar untuk menyimpan artikel ini!");
+      router.push("/register?redirect=favorite");
       return;
     }
 
     const nextState = !isBookmarked;
     setIsBookmarked(nextState);
+    try {
+      localStorage.setItem(
+        `mindmaze_bookmark_${user.email}_${articleTitle}`,
+        String(nextState)
+      );
+    } catch {}
     showToast(
       nextState
-        ? `Artikel disimpan ke bookmark ${user.name}! 🔖`
-        : "Artikel dihapus dari bookmark."
+        ? `Artikel disimpan ke koleksi favorit ${user.name}! ⭐`
+        : "Artikel dihapus dari koleksi favorit."
     );
   };
 

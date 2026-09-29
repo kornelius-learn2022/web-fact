@@ -151,24 +151,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Quick Demo Fill Buttons */}
-            <div className="rounded-2xl border border-white/10 bg-black/40 p-3">
-              <span className="text-[11px] font-bold text-gray-400 block mb-2">
-                ⚡ Akun Administrator Resmi:
-              </span>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEmail("admin@mindmaze.com");
-                    setPassword("admin123");
-                  }}
-                  className="rounded-full bg-neon-fuchsia/20 border border-neon-fuchsia/40 px-3 py-1 text-[11px] font-bold text-white hover:bg-neon-fuchsia/30 transition-all"
-                >
-                  🛡️ Isi Otomatis Admin (admin@mindmaze.com)
-                </button>
-              </div>
-            </div>
 
             {/* Login Button */}
             <button

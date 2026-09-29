@@ -32,6 +32,29 @@ export async function POST(request: Request) {
       );
     }
 
+    // Check Approval Status
+    if (user.status === "pending") {
+      return NextResponse.json(
+        {
+          success: false,
+          isPending: true,
+          message:
+            "Akun Anda sedang dalam antrean verifikasi dan persetujuan oleh Administrator. Silakan tunggu hingga disetujui.",
+        },
+        { status: 403 }
+      );
+    }
+
+    if (user.status === "rejected") {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Pendaftaran akun Anda ditolak oleh Administrator.",
+        },
+        { status: 403 }
+      );
+    }
+
     // Sign JWT token
     const token = await signJWT({
       id: user.id,
@@ -41,7 +64,7 @@ export async function POST(request: Request) {
       avatarColor: user.avatarColor,
     });
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       message: "Login berhasil! Selamat datang kembali.",
       token,
@@ -51,8 +74,34 @@ export async function POST(request: Request) {
         email: user.email,
         role: user.role,
         avatarColor: user.avatarColor,
+        status: user.status,
       },
     });
+
+    // Set auth cookies for session convenience (Requirement 12)
+    response.cookies.set("mind_maze_token", token, {
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      sameSite: "lax",
+    });
+
+    response.cookies.set(
+      "mind_maze_user",
+      JSON.stringify({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        avatarColor: user.avatarColor,
+      }),
+      {
+        path: "/",
+        maxAge: 60 * 60 * 24 * 7,
+        sameSite: "lax",
+      }
+    );
+
+    return response;
   } catch (error) {
     return NextResponse.json(
       { success: false, message: "Terjadi kesalahan server saat login." },

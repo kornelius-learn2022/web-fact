@@ -45,8 +45,13 @@ export default function RegisterPage() {
     if (!res.success) {
       setErrorMsg(res.message);
     } else {
-      setSuccessMsg("Pendaftaran berhasil! Menyiapkan akun...");
-      setShowTypingLoader(true);
+      setSuccessMsg(
+        res.message ||
+          "Pendaftaran berhasil diajukan! Akun Anda sedang menunggu persetujuan Administrator sebelum dapat login."
+      );
+      setFullName("");
+      setEmail("");
+      setPassword("");
     }
   };
 
@@ -92,9 +97,17 @@ export default function RegisterPage() {
         <div className="w-full max-w-md rounded-3xl border border-white/10 bg-[#121212] p-8 sm:p-10 shadow-2xl relative">
           {/* Success Banner */}
           {successMsg && (
-            <div className="mb-6 flex items-center gap-2 rounded-2xl bg-cyber-lime/20 border border-cyber-lime p-4 text-xs font-bold text-cyber-lime animate-in fade-in">
-              <Check className="h-5 w-5" />
-              <span>{successMsg}</span>
+            <div className="mb-6 rounded-2xl bg-cyber-lime/20 border border-cyber-lime p-4 text-xs font-bold text-cyber-lime animate-in fade-in">
+              <div className="flex items-center gap-2 mb-3">
+                <Check className="h-5 w-5 flex-shrink-0" />
+                <span>{successMsg}</span>
+              </div>
+              <Link
+                href="/login"
+                className="inline-block w-full text-center rounded-full bg-cyber-lime py-2 text-xs font-black text-black hover:brightness-110"
+              >
+                Ke Halaman Login ➔
+              </Link>
             </div>
           )}
 
@@ -107,11 +120,16 @@ export default function RegisterPage() {
           )}
 
           {/* Form Header */}
-          <div className="text-center mb-8">
+          <div className="text-center mb-6">
             <h2 className="text-3xl font-black text-white">Sign Up!</h2>
             <p className="text-lg font-bold text-cyber-lime mt-1">
               Join the <span className="font-black">Mind.Maze</span>
             </p>
+          </div>
+
+          {/* Note about admin approval */}
+          <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 p-3 text-[11px] text-gray-300">
+            <span className="font-bold text-cyber-lime">🛡️ Verifikasi Admin:</span> Akun kontributor baru akan ditinjau dan disetujui terlebih dahulu oleh Administrator sebelum dapat login.
           </div>
 
           {/* Sign Up Form */}

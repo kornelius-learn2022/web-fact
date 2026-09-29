@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { findUserByEmail, createUser } from "@/lib/usersStore";
-import { signJWT } from "@/lib/jwt";
 
 export async function POST(request: Request) {
   try {
@@ -38,29 +37,21 @@ export async function POST(request: Request) {
       );
     }
 
-    // Create user (default role: Kontributor)
-    const newUser = await createUser(name.trim(), email.trim(), password, "Kontributor");
-
-    // Generate JWT token
-    const token = await signJWT({
-      id: newUser.id,
-      name: newUser.name,
-      email: newUser.email,
-      role: newUser.role,
-      avatarColor: newUser.avatarColor,
-    });
+    // Create user with status 'pending' (requires admin approval)
+    const newUser = await createUser(name.trim(), email.trim(), password, "Kontributor", "pending");
 
     return NextResponse.json(
       {
         success: true,
-        message: "Pendaftaran berhasil! Selamat datang di Mind.Maze.",
-        token,
+        pendingApproval: true,
+        message: "Pendaftaran berhasil diajukan! Akun Anda sedang menunggu verifikasi dan persetujuan Administrator sebelum dapat login.",
         user: {
           id: newUser.id,
           name: newUser.name,
           email: newUser.email,
           role: newUser.role,
           avatarColor: newUser.avatarColor,
+          status: newUser.status,
         },
       },
       { status: 201 }

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { dbGetUsers, dbCreateUser, dbDeleteUser, dbFindUserByEmail } from "@/lib/db";
+import { dbGetUsers, dbCreateUser, dbDeleteUser, dbFindUserByEmail, dbUpdateUserStatus } from "@/lib/db";
 import { hashPassword, verifyJWT } from "@/lib/jwt";
 
 async function verifyAdminAuth(request: Request): Promise<boolean> {
@@ -30,6 +30,7 @@ export async function GET(request: Request) {
         role: u.role,
         avatarColor: u.avatarColor,
         createdAt: u.createdAt,
+        status: u.status,
       })),
     });
   } catch (error) {
@@ -91,6 +92,7 @@ export async function POST(request: Request) {
       email: email.trim(),
       passwordHash,
       role: assignedRole,
+      status: "approved", // Admin created users are directly approved
     });
 
     return NextResponse.json({
@@ -103,12 +105,54 @@ export async function POST(request: Request) {
         role: newUser.role,
         avatarColor: newUser.avatarColor,
         createdAt: newUser.createdAt,
+        status: newUser.status,
       },
     });
   } catch (error) {
     console.error("Error in POST /api/admin/users:", error);
     return NextResponse.json(
       { success: false, message: "Terjadi kesalahan server saat menambahkan pengguna." },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const isAuthed = await verifyAdminAuth(request);
+    if (!isAuthed) {
+      return NextResponse.json(
+        { success: false, message: "Akses ditolak: Hanya Admin yang dapat memverifikasi pengguna." },
+        { status: 403 }
+      );
+    }
+
+    const body = await request.json();
+    const { id, status } = body;
+
+    if (!id || !["approved", "rejected", "pending"].includes(status)) {
+      return NextResponse.json(
+        { success: false, message: "ID pengguna dan status yang valid diperlukan." },
+        { status: 400 }
+      );
+    }
+
+    const success = await dbUpdateUserStatus(id, status);
+    if (!success) {
+      return NextResponse.json(
+        { success: false, message: "Gagal memperbarui status pengguna." },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: `Status akun pengguna berhasil diubah menjadi: ${status.toUpperCase()}`,
+    });
+  } catch (error) {
+    console.error("Error in PATCH /api/admin/users:", error);
+    return NextResponse.json(
+      { success: false, message: "Terjadi kesalahan server saat memperbarui status pengguna." },
       { status: 500 }
     );
   }

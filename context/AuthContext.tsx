@@ -21,7 +21,7 @@ interface AuthContextType {
     name: string,
     email: string,
     password: string
-  ) => Promise<{ success: boolean; message: string }>;
+  ) => Promise<{ success: boolean; message: string; pendingApproval?: boolean }>;
   updateName: (
     newName: string
   ) => Promise<{ success: boolean; message: string }>;
@@ -93,7 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     name: string,
     email: string,
     password: string
-  ): Promise<{ success: boolean; message: string }> => {
+  ): Promise<{ success: boolean; message: string; pendingApproval?: boolean }> => {
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
@@ -110,10 +110,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
       }
 
-      setToken(data.token);
-      setUser(data.user);
-      localStorage.setItem("mind_maze_jwt_token", data.token);
-      localStorage.setItem("mind_maze_user", JSON.stringify(data.user));
+      if (data.pendingApproval) {
+        return {
+          success: true,
+          pendingApproval: true,
+          message: data.message,
+        };
+      }
+
+      if (data.token && data.user) {
+        setToken(data.token);
+        setUser(data.user);
+        localStorage.setItem("mind_maze_jwt_token", data.token);
+        localStorage.setItem("mind_maze_user", JSON.stringify(data.user));
+      }
 
       return { success: true, message: data.message };
     } catch {

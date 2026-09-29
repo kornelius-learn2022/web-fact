@@ -5,6 +5,7 @@ import { CATEGORIES, ARTICLES } from "@/data/mockData";
 import { dbGetCategories, dbGetArticles } from "@/lib/db";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import ArticleCardActions from "@/components/ArticleCardActions";
 import {
   ArrowLeft,
   Clock,
@@ -185,20 +186,8 @@ export default async function CategoryDetailPage({ params }: PageProps) {
                       </div>
                     </div>
 
-                    {/* Bottom Action: Baca Detail */}
-                    <div className="flex items-center justify-between border-t border-white/10 px-6 py-4 bg-[#1b1b1b]">
-                      <Link
-                        href={`/article/${article.slug}`}
-                        className="group/btn inline-flex items-center gap-1.5 rounded-full bg-neon-fuchsia px-4 py-2 text-xs font-black uppercase tracking-wider text-black transition-all hover:brightness-110 active:scale-95"
-                      >
-                        <span>Baca Detail</span>
-                        <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover/btn:translate-x-0.5" />
-                      </Link>
-
-                      <span className="text-xs text-gray-500 font-semibold">
-                        Mind.Maze
-                      </span>
-                    </div>
+                    {/* Bottom Action: Baca Detail + Bookmark + Share */}
+                    <ArticleCardActions article={article} />
                   </article>
                 ))}
               </div>

@@ -14,15 +14,18 @@ export default function Footer() {
           </p>
         </div>
 
-        <div className="flex items-center gap-6 text-xs text-gray-400">
+        <div className="flex flex-wrap items-center gap-6 text-xs text-gray-400">
           <Link href="/" className="hover:text-cyber-lime transition-colors">
             Beranda
           </Link>
-          <Link href="#explore" className="hover:text-cyber-lime transition-colors">
-            Kategori
+          <Link href="/about" className="hover:text-cyber-lime transition-colors">
+            About Us
           </Link>
-          <Link href="#quiz" className="hover:text-cyber-lime transition-colors">
-            Teka-Teki Silang
+          <Link href="/contact" className="hover:text-cyber-lime transition-colors">
+            Contact Us
+          </Link>
+          <Link href="/quiz" className="hover:text-cyber-lime transition-colors">
+            Kuis Trivia
           </Link>
         </div>
 

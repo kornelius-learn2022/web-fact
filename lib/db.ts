@@ -23,6 +23,7 @@ export interface DbUser {
   role: "Admin" | "Kontributor";
   avatarColor: string;
   createdAt: string;
+  status: "pending" | "approved" | "rejected";
 }
 
 // In-memory fallback stores for offline/local development without DB URL
@@ -43,6 +44,7 @@ async function ensureDefaultMemoryUsers() {
         role: "Admin",
         avatarColor: "bg-neon-fuchsia",
         createdAt: "2026-09-29T00:00:00.000Z",
+        status: "approved",
       },
     ];
   }
@@ -93,9 +95,17 @@ export async function initDb() {
         password_hash TEXT NOT NULL,
         role TEXT NOT NULL DEFAULT 'Kontributor',
         avatar_color TEXT NOT NULL DEFAULT 'bg-cyber-lime',
-        created_at TEXT NOT NULL
+        created_at TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'approved'
       );
     `;
+
+    // Ensure status column exists if table was created previously
+    try {
+      await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'approved';`;
+    } catch {
+      // Ignore if column already exists
+    }
 
     // Clean out legacy mock articles (id like 'art-%')
     await sql`DELETE FROM articles WHERE id LIKE 'art-%';`;
@@ -147,12 +157,12 @@ export async function initDb() {
     // Clean out legacy dummy users
     await sql`DELETE FROM users WHERE email IN ('farhan@mindmaze.com', 'nadia@mindmaze.com');`;
 
-    // Ensure Admin user exists
+    // Ensure Admin user exists and is approved
     const adminCheck = await sql`SELECT id FROM users WHERE email = 'admin@mindmaze.com';`;
     if (adminCheck.length === 0) {
       const adminPassHash = await hashPassword("admin123");
       await sql`
-        INSERT INTO users (id, name, email, password_hash, role, avatar_color, created_at)
+        INSERT INTO users (id, name, email, password_hash, role, avatar_color, created_at, status)
         VALUES (
           'usr-admin-1',
           'Tim Redaksi Mind.Maze',
@@ -160,10 +170,13 @@ export async function initDb() {
           ${adminPassHash},
           'Admin',
           'bg-neon-fuchsia',
-          ${new Date().toISOString()}
+          ${new Date().toISOString()},
+          'approved'
         )
         ON CONFLICT (email) DO NOTHING;
       `;
+    } else {
+      await sql`UPDATE users SET status = 'approved' WHERE email = 'admin@mindmaze.com';`;
     }
 
     isDbInitialized = true;
@@ -351,7 +364,7 @@ export async function dbGetUsers(): Promise<DbUser[]> {
   await initDb();
   try {
     const rows = await sql`
-      SELECT id, name, email, password_hash, role, avatar_color, created_at 
+      SELECT id, name, email, password_hash, role, avatar_color, created_at, COALESCE(status, 'approved') as status 
       FROM users 
       ORDER BY created_at ASC;
     `;
@@ -363,6 +376,7 @@ export async function dbGetUsers(): Promise<DbUser[]> {
       role: r.role,
       avatarColor: r.avatar_color,
       createdAt: r.created_at,
+      status: r.status,
     }));
   } catch (error) {
     console.error("Error fetching users from Postgres:", error);
@@ -382,7 +396,7 @@ export async function dbFindUserByEmail(email: string): Promise<DbUser | null> {
   await initDb();
   try {
     const rows = await sql`
-      SELECT id, name, email, password_hash, role, avatar_color, created_at
+      SELECT id, name, email, password_hash, role, avatar_color, created_at, COALESCE(status, 'approved') as status
       FROM users
       WHERE LOWER(email) = LOWER(${email.trim()})
       LIMIT 1;
@@ -397,6 +411,7 @@ export async function dbFindUserByEmail(email: string): Promise<DbUser | null> {
       role: r.role,
       avatarColor: r.avatar_color,
       createdAt: r.created_at,
+      status: r.status,
     };
   } catch (error) {
     console.error("Error finding user by email in Postgres:", error);
@@ -413,8 +428,10 @@ export async function dbCreateUser(user: {
   passwordHash: string;
   role?: "Admin" | "Kontributor";
   avatarColor?: string;
+  status?: "pending" | "approved" | "rejected";
 }): Promise<DbUser> {
   const role = user.role || "Kontributor";
+  const defaultStatus = role === "Admin" ? "approved" : (user.status || "pending");
   const newUser: DbUser = {
     id: user.id || `usr-${Date.now()}`,
     name: user.name.trim(),
@@ -423,6 +440,7 @@ export async function dbCreateUser(user: {
     role,
     avatarColor: user.avatarColor || (role === "Admin" ? "bg-neon-fuchsia" : "bg-cyber-lime"),
     createdAt: new Date().toISOString(),
+    status: defaultStatus,
   };
 
   const sql = getSql();
@@ -434,7 +452,7 @@ export async function dbCreateUser(user: {
 
   await initDb();
   await sql`
-    INSERT INTO users (id, name, email, password_hash, role, avatar_color, created_at)
+    INSERT INTO users (id, name, email, password_hash, role, avatar_color, created_at, status)
     VALUES (
       ${newUser.id},
       ${newUser.name},
@@ -442,16 +460,40 @@ export async function dbCreateUser(user: {
       ${newUser.passwordHash},
       ${newUser.role},
       ${newUser.avatarColor},
-      ${newUser.createdAt}
+      ${newUser.createdAt},
+      ${newUser.status}
     )
     ON CONFLICT (email) DO UPDATE SET
       name = EXCLUDED.name,
       password_hash = EXCLUDED.password_hash,
       role = EXCLUDED.role,
-      avatar_color = EXCLUDED.avatar_color;
+      avatar_color = EXCLUDED.avatar_color,
+      status = EXCLUDED.status;
   `;
 
   return newUser;
+}
+
+export async function dbUpdateUserStatus(
+  id: string,
+  status: "pending" | "approved" | "rejected"
+): Promise<boolean> {
+  const sql = getSql();
+  if (!sql) {
+    await ensureDefaultMemoryUsers();
+    const u = memoryUsers.find((user) => user.id === id);
+    if (!u) return false;
+    u.status = status;
+    return true;
+  }
+
+  await initDb();
+  await sql`
+    UPDATE users
+    SET status = ${status}
+    WHERE id = ${id} AND email != 'admin@mindmaze.com';
+  `;
+  return true;
 }
 
 export async function dbDeleteUser(id: string): Promise<boolean> {

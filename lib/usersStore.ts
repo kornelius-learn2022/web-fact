@@ -6,6 +6,7 @@ import {
   dbCreateUser,
   dbDeleteUser,
   dbUpdateUserName,
+  dbUpdateUserStatus,
 } from "./db";
 
 export interface StoredUser {
@@ -15,6 +16,7 @@ export interface StoredUser {
   passwordHash: string;
   role: "Admin" | "Kontributor";
   avatarColor: string;
+  status: "pending" | "approved" | "rejected";
 }
 
 export async function findUserByEmail(email: string): Promise<StoredUser | null> {
@@ -26,7 +28,8 @@ export async function createUser(
   name: string,
   email: string,
   plainPassword: string,
-  role: "Admin" | "Kontributor" = "Kontributor"
+  role: "Admin" | "Kontributor" = "Kontributor",
+  status: "pending" | "approved" | "rejected" = role === "Admin" ? "approved" : "pending"
 ): Promise<StoredUser> {
   const passwordHash = await hashPassword(plainPassword);
   return dbCreateUser({
@@ -34,6 +37,7 @@ export async function createUser(
     email,
     passwordHash,
     role,
+    status,
   });
 }
 
@@ -41,4 +45,4 @@ export async function updateUserName(email: string, newName: string): Promise<St
   return dbUpdateUserName(email, newName);
 }
 
-export { dbGetUsers, dbDeleteUser };
+export { dbGetUsers, dbDeleteUser, dbUpdateUserStatus };
