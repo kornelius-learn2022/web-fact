@@ -4,7 +4,6 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import {
   Article,
   Category,
-  Author,
   INITIAL_ARTICLES,
   INITIAL_CATEGORIES,
 } from "@/data/mockData";
@@ -45,54 +44,64 @@ interface DataContextType {
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
-  const [articles, setArticles] = useState<Article[]>([]);
+  const [articles, setArticles] = useState<Article[]>(INITIAL_ARTICLES);
   const [categories, setCategories] = useState<Category[]>(INITIAL_CATEGORIES);
-  const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load from localStorage or initialize with INITIAL data
+  // Sync from Cloud Database on mount
   useEffect(() => {
+    // 1. First populate from localStorage cache for instant UI
     try {
       const savedArticles = localStorage.getItem("mind_maze_articles");
       const savedCategories = localStorage.getItem("mind_maze_categories");
-
-      if (savedArticles) {
-        setArticles(JSON.parse(savedArticles));
-      } else {
-        setArticles(INITIAL_ARTICLES);
-        localStorage.setItem(
-          "mind_maze_articles",
-          JSON.stringify(INITIAL_ARTICLES)
-        );
-      }
-
-      if (savedCategories) {
-        setCategories(JSON.parse(savedCategories));
-      } else {
-        setCategories(INITIAL_CATEGORIES);
-        localStorage.setItem(
-          "mind_maze_categories",
-          JSON.stringify(INITIAL_CATEGORIES)
-        );
-      }
+      if (savedArticles) setArticles(JSON.parse(savedArticles));
+      if (savedCategories) setCategories(JSON.parse(savedCategories));
     } catch {
-      setArticles(INITIAL_ARTICLES);
-      setCategories(INITIAL_CATEGORIES);
+      // ignore
     }
-    setIsLoaded(true);
+
+    // 2. Fetch fresh data from Cloud Postgres Database
+    async function syncFromCloud() {
+      try {
+        const [resArt, resCat] = await Promise.all([
+          fetch("/api/articles"),
+          fetch("/api/categories"),
+        ]);
+
+        const dataArt = await resArt.json();
+        if (dataArt.success && Array.isArray(dataArt.articles) && dataArt.articles.length > 0) {
+          setArticles(dataArt.articles);
+          localStorage.setItem("mind_maze_articles", JSON.stringify(dataArt.articles));
+        }
+
+        const dataCat = await resCat.json();
+        if (dataCat.success && Array.isArray(dataCat.categories) && dataCat.categories.length > 0) {
+          setCategories(dataCat.categories);
+          localStorage.setItem("mind_maze_categories", JSON.stringify(dataCat.categories));
+        }
+      } catch (err) {
+        console.error("Failed to sync from cloud database, using cache:", err);
+      }
+    }
+
+    syncFromCloud();
   }, []);
 
-  // Save to localStorage when updated
   const persistArticles = (newArticles: Article[]) => {
     setArticles(newArticles);
-    localStorage.setItem("mind_maze_articles", JSON.stringify(newArticles));
+    try {
+      localStorage.setItem("mind_maze_articles", JSON.stringify(newArticles));
+    } catch {
+      // ignore
+    }
   };
 
   const persistCategories = (newCategories: Category[]) => {
     setCategories(newCategories);
-    localStorage.setItem(
-      "mind_maze_categories",
-      JSON.stringify(newCategories)
-    );
+    try {
+      localStorage.setItem("mind_maze_categories", JSON.stringify(newCategories));
+    } catch {
+      // ignore
+    }
   };
 
   // Add Article (RBAC: Admin -> published, Kontributor -> pending)
@@ -126,6 +135,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const updated = [newArticle, ...articles];
     persistArticles(updated);
 
+    // Sync to Cloud Database (Postgres)
+    fetch("/api/articles", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ article: newArticle }),
+    }).catch((e) => console.error("Cloud save failed:", e));
+
     // Update category count
     const catUpdated = categories.map((c) =>
       c.slug === articleData.categorySlug ? { ...c, count: c.count + 1 } : c
@@ -135,7 +151,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     return {
       success: true,
       message: isAdmin
-        ? "Artikel berhasil dipublikasikan secara langsung! 🚀"
+        ? "Artikel berhasil dipublikasikan secara langsung ke Cloud Database! 🚀"
         : "Artikel berhasil dikirim! Menunggu verifikasi dari Admin sebelum tayang. ⏳",
       article: newArticle,
     };
@@ -162,28 +178,37 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       };
     }
 
+    let updatedArticle: Article = target;
     const updated = articles.map((a) => {
       if (a.id === id) {
-        return {
+        updatedArticle = {
           ...a,
           ...updatedData,
-          // If edited by contributor, re-verify or keep pending
           status: isAdmin ? (updatedData.status || a.status) : "pending",
         };
+        return updatedArticle;
       }
       return a;
     });
 
     persistArticles(updated);
+
+    // Sync to Cloud Database (Postgres)
+    fetch(`/api/articles/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ article: updatedArticle }),
+    }).catch((e) => console.error("Cloud update failed:", e));
+
     return {
       success: true,
       message: isAdmin
-        ? "Artikel berhasil diperbarui oleh Admin."
+        ? "Artikel berhasil diperbarui di Cloud Database."
         : "Artikel berhasil diedit dan diajukan ulang untuk verifikasi.",
     };
   };
 
-  // Delete Article (RBAC: Admin can delete any, Kontributor can only delete own)
+  // Delete Article
   const deleteArticle = (id: string, user: User) => {
     const target = articles.find((a) => a.id === id);
     if (!target) {
@@ -202,7 +227,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
     const updated = articles.filter((a) => a.id !== id);
     persistArticles(updated);
-    return { success: true, message: "Artikel berhasil dihapus." };
+
+    // Sync to Cloud Database (Postgres)
+    fetch(`/api/articles/${id}`, {
+      method: "DELETE",
+    }).catch((e) => console.error("Cloud delete failed:", e));
+
+    return { success: true, message: "Artikel berhasil dihapus dari Cloud Database." };
   };
 
   // Verify Article (Admin Only)
@@ -218,6 +249,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       return a;
     });
     persistArticles(updated);
+
+    // Sync to Cloud Database (Postgres)
+    fetch(`/api/articles/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "verify", status, feedback }),
+    }).catch((e) => console.error("Cloud verify failed:", e));
   };
 
   // Toggle Hot Pick (Admin Only)
@@ -229,6 +267,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       return a;
     });
     persistArticles(updated);
+
+    // Sync to Cloud Database (Postgres)
+    fetch(`/api/articles/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "toggleHotPick" }),
+    }).catch((e) => console.error("Cloud toggle hotpick failed:", e));
   };
 
   // Add Category (Admin Only)
@@ -239,12 +284,25 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       count: 0,
     };
     persistCategories([...categories, newCat]);
-    return { success: true, message: "Kategori baru berhasil ditambahkan!" };
+
+    // Sync to Cloud Database (Postgres)
+    fetch("/api/categories", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ category: newCat }),
+    }).catch((e) => console.error("Cloud category save failed:", e));
+
+    return { success: true, message: "Kategori baru berhasil ditambahkan ke Cloud Database!" };
   };
 
   // Delete Category (Admin Only)
   const deleteCategory = (id: string) => {
     persistCategories(categories.filter((c) => c.id !== id));
+
+    // Sync to Cloud Database (Postgres)
+    fetch(`/api/categories?id=${id}`, {
+      method: "DELETE",
+    }).catch((e) => console.error("Cloud category delete failed:", e));
   };
 
   // Helper selectors
