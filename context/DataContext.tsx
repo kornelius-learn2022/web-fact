@@ -63,18 +63,18 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     async function syncFromCloud() {
       try {
         const [resArt, resCat] = await Promise.all([
-          fetch("/api/articles"),
-          fetch("/api/categories"),
+          fetch("/api/articles", { cache: "no-store" }),
+          fetch("/api/categories", { cache: "no-store" }),
         ]);
 
         const dataArt = await resArt.json();
-        if (dataArt.success && Array.isArray(dataArt.articles) && dataArt.articles.length > 0) {
+        if (dataArt.success && Array.isArray(dataArt.articles)) {
           setArticles(dataArt.articles);
           localStorage.setItem("mind_maze_articles", JSON.stringify(dataArt.articles));
         }
 
         const dataCat = await resCat.json();
-        if (dataCat.success && Array.isArray(dataCat.categories) && dataCat.categories.length > 0) {
+        if (dataCat.success && Array.isArray(dataCat.categories)) {
           setCategories(dataCat.categories);
           localStorage.setItem("mind_maze_categories", JSON.stringify(dataCat.categories));
         }
@@ -118,7 +118,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const isAdmin = user.role === "Admin";
     const newArticle: Article = {
       ...articleData,
-      id: `art-${Date.now()}`,
+      id: `fact-user-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       slug: `${slug}-${Math.floor(Math.random() * 1000)}`,
       status: isAdmin ? "published" : "pending",
       isHotPick: isAdmin ? Boolean(articleData.isHotPick) : false,
@@ -140,7 +140,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ article: newArticle }),
-    }).catch((e) => console.error("Cloud save failed:", e));
+    })
+      .then((r) => r.json())
+      .then((d) => {
+        if (!d.success) {
+          console.error("Gagal menyimpan artikel ke Postgres:", d.message);
+        }
+      })
+      .catch((e) => console.error("Cloud save failed:", e));
 
     // Update category count
     const catUpdated = categories.map((c) =>

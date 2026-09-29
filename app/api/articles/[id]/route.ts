@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { dbSaveArticle, dbDeleteArticle, dbToggleHotPick, dbVerifyArticle } from "@/lib/db";
 import { Article } from "@/data/mockData";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }

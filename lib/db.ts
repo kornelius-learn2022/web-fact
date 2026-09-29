@@ -107,8 +107,6 @@ export async function initDb() {
       // Ignore if column already exists
     }
 
-    // Clean out legacy mock articles (id like 'art-%')
-    await sql`DELETE FROM articles WHERE id LIKE 'art-%';`;
 
     // Upsert all 16 initial articles so data & sources are always up to date
     for (const a of INITIAL_ARTICLES) {

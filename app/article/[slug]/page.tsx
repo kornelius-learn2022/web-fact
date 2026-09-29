@@ -22,6 +22,9 @@ interface PageProps {
   }>;
 }
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function generateStaticParams() {
   const articles = await dbGetArticles();
   return articles.map((article) => ({

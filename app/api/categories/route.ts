@@ -2,10 +2,22 @@ import { NextResponse } from "next/server";
 import { dbGetCategories, dbSaveCategory, dbDeleteCategory } from "@/lib/db";
 import { Category } from "@/data/mockData";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET() {
   try {
     const categories = await dbGetCategories();
-    return NextResponse.json({ success: true, categories });
+    return NextResponse.json(
+      { success: true, categories },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      }
+    );
   } catch (error: any) {
     return NextResponse.json(
       { success: false, message: error.message || "Failed to fetch categories" },
