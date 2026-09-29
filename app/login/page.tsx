@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { User, Lock, ArrowLeft, Check, AlertCircle } from "lucide-react";
+import { User, Lock, ArrowLeft, Check, AlertCircle, Eye, EyeOff, Sparkles } from "lucide-react";
 import TypingLoader from "@/components/TypingLoader";
 
 export default function LoginPage() {
@@ -13,6 +13,7 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -28,7 +29,7 @@ export default function LoginPage() {
     }
 
     setLoading(true);
-    const res = await login(email.trim(), password);
+    const res = await login(email.trim().toLowerCase(), password.trim());
     setLoading(false);
 
     if (!res.success) {
@@ -122,20 +123,60 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Password (Wajib diisi & diverifikasi) */}
+            {/* Password */}
             <div>
               <div className="relative">
                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-black">
                   <Lock className="h-5 w-5 stroke-[2.5]" />
                 </div>
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-full bg-neon-fuchsia py-3.5 pl-12 pr-4 text-sm font-bold text-black placeholder-black/70 shadow-md focus:outline-none focus:ring-2 focus:ring-white transition-all"
+                  className="w-full rounded-full bg-neon-fuchsia py-3.5 pl-12 pr-12 text-sm font-bold text-black placeholder-black/70 shadow-md focus:outline-none focus:ring-2 focus:ring-white transition-all"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 flex items-center pr-4 text-black/70 hover:text-black transition-colors"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5 stroke-[2.5]" />
+                  ) : (
+                    <Eye className="h-5 w-5 stroke-[2.5]" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Demo Fill Buttons */}
+            <div className="rounded-2xl border border-white/10 bg-black/40 p-3">
+              <span className="text-[11px] font-bold text-gray-400 block mb-2">
+                ⚡ Tombol Isi Cepat (Uji Coba):
+              </span>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail("admin@mindmaze.com");
+                    setPassword("admin123");
+                  }}
+                  className="rounded-full bg-neon-fuchsia/20 border border-neon-fuchsia/40 px-3 py-1 text-[11px] font-bold text-white hover:bg-neon-fuchsia/30 transition-all"
+                >
+                  🛡️ Admin
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail("farhan@mindmaze.com");
+                    setPassword("farhan123");
+                  }}
+                  className="rounded-full bg-electric-indigo/20 border border-electric-indigo/40 px-3 py-1 text-[11px] font-bold text-white hover:bg-electric-indigo/30 transition-all"
+                >
+                  ✍️ dr. Farhan (Kontributor)
+                </button>
               </div>
             </div>
 
@@ -143,7 +184,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="mt-6 w-full rounded-full bg-cyber-lime py-3.5 text-sm font-black text-black shadow-lg transition-all hover:brightness-110 active:scale-95 disabled:opacity-50"
+              className="mt-2 w-full rounded-full bg-cyber-lime py-3.5 text-sm font-black text-black shadow-lg transition-all hover:brightness-110 active:scale-95 disabled:opacity-50"
             >
               {loading ? "Memverifikasi Kredensial..." : "Log in"}
             </button>
