@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { Phone, Mail, MapPin, Send, CheckCircle2 } from "lucide-react";
+import { Phone, Mail, MapPin, CheckCircle2 } from "lucide-react";
 
 export default function ContactUsPage() {
   const [name, setName] = useState("");
@@ -28,162 +28,144 @@ export default function ContactUsPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-graphite-black text-white selection:bg-cyber-lime selection:text-black">
+    <div className="flex min-h-screen flex-col bg-black text-white selection:bg-cyber-lime selection:text-black">
       <Navbar />
 
-      <main className="flex-1">
-        {/* Banner Section */}
-        <section className="relative overflow-hidden bg-neon-fuchsia">
-          <div className="relative h-64 sm:h-80 md:h-96 w-full">
-            {/* Background Team Interaction Photo */}
-            <img
-              src="https://images.unsplash.com/photo-1531403009284-440f080d1e12?auto=format&fit=crop&w=1600&q=80"
-              alt="Contact Mind.Maze Team"
-              className="h-full w-full object-cover mix-blend-multiply filter grayscale contrast-125 opacity-80"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-neon-fuchsia/90 via-neon-fuchsia/40 to-transparent" />
-
-            {/* Centered CONTACT US Title */}
-            <div className="absolute inset-0 flex items-center justify-center p-4">
-              <h1 className="text-4xl sm:text-6xl md:text-7xl font-black tracking-widest text-white drop-shadow-2xl">
-                CONTACT US
-              </h1>
-            </div>
-          </div>
-        </section>
-
-        {/* Content Section: Get In Touch + Form */}
-        <section className="mx-auto max-w-6xl px-6 py-16 md:py-24">
-          <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 items-start">
+      <main className="flex-1 flex items-center justify-center p-4 sm:p-8 md:p-12">
+        <div className="w-full max-w-5xl overflow-hidden rounded-3xl border border-white/20 bg-white text-black shadow-2xl">
+          <div className="grid grid-cols-1 md:grid-cols-2">
             {/* Left Column: Get In Touch */}
-            <div className="lg:col-span-5 space-y-8">
+            <div className="p-8 sm:p-12 md:p-14 flex flex-col justify-between border-b md:border-b-0 md:border-r border-gray-200">
               <div>
-                <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+                <h1 className="text-4xl sm:text-5xl font-black text-black tracking-tight mb-8">
                   Get In Touch
-                </h2>
-                <p className="mt-2 text-sm text-gray-400">
-                  Punya pertanyaan seputar fakta ilmiah, ingin berkolaborasi, atau memberi saran untuk Mind.Maze? Tim kami siap mendengar.
-                </p>
+                </h1>
+
+                <div className="space-y-8">
+                  {/* Phone & FISIP UNAIR row */}
+                  <div className="flex flex-wrap items-start gap-8">
+                    {/* Phone */}
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-full bg-cyber-lime text-black shadow-md flex-shrink-0">
+                        <Phone className="h-5 w-5 stroke-[2.5]" />
+                      </div>
+                      <div>
+                        <h3 className="text-xs font-black text-black uppercase tracking-wider">Phone</h3>
+                        <p className="text-sm font-bold text-gray-800">(+62) 594218652</p>
+                      </div>
+                    </div>
+
+                    {/* Location: FISIP UNAIR */}
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-full bg-cyber-lime text-black shadow-md flex-shrink-0">
+                        <MapPin className="h-5 w-5 stroke-[2.5]" />
+                      </div>
+                      <div>
+                        <span className="text-sm font-black text-black tracking-wider uppercase">
+                          FISIP UNAIR
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Email */}
+                  <div className="flex items-start gap-3 pt-2">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-cyber-lime text-black shadow-md flex-shrink-0 mt-0.5">
+                      <Mail className="h-5 w-5 stroke-[2.5]" />
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="text-xs font-black text-black uppercase tracking-wider">Email</h3>
+                      <p className="text-xs sm:text-sm font-semibold text-gray-800 break-all leading-relaxed">
+                        priscila.buana.tunggadewi-2024@fisip.unair.ac.id
+                      </p>
+                      <p className="text-xs sm:text-sm font-semibold text-gray-800 break-all leading-relaxed">
+                        reenata.amodia.khansa-2024@fisip.unair.ac.id
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className="space-y-6">
-                {/* Phone Item */}
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyber-lime text-black shadow-lg">
-                    <Phone className="h-6 w-6 stroke-[2.5]" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-gray-400">Phone</h3>
-                    <p className="text-base font-black text-white">(+62) 594218652</p>
-                  </div>
-                </div>
-
-                {/* Email Item */}
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyber-lime text-black shadow-lg">
-                    <Mail className="h-6 w-6 stroke-[2.5]" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-gray-400">Email</h3>
-                    <p className="text-base font-black text-white break-all">
-                      priscila.buana.tunggadewi@mindmaze.com
-                    </p>
-                  </div>
-                </div>
-
-                {/* Address Item */}
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyber-lime text-black shadow-lg">
-                    <MapPin className="h-6 w-6 stroke-[2.5]" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-gray-400">Address</h3>
-                    <p className="text-sm font-semibold text-white">
-                      Jl. Sains & Teknologi No. 42, Digital Knowledge Hub, Indonesia
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Column: Contact Form */}
-            <div className="lg:col-span-7 rounded-3xl border border-white/10 bg-[#161616] p-6 sm:p-10 shadow-2xl">
               {submitted && (
-                <div className="mb-6 flex items-center gap-3 rounded-2xl bg-cyber-lime/20 border border-cyber-lime p-4 text-sm font-bold text-cyber-lime">
-                  <CheckCircle2 className="h-5 w-5 flex-shrink-0" />
-                  <span>Terima kasih! Pesan Anda telah kami terima dan akan segera direspons.</span>
+                <div className="mt-8 flex items-center gap-2 rounded-2xl bg-cyber-lime/30 border border-cyber-lime p-3 text-xs font-black text-black animate-in fade-in">
+                  <CheckCircle2 className="h-4 w-4 text-black flex-shrink-0" />
+                  <span>Pesan Anda berhasil dikirim! Tim kami akan segera menghubungi Anda.</span>
                 </div>
               )}
+            </div>
 
+            {/* Right Column: Interactive Form matching Image 1 */}
+            <div className="p-8 sm:p-12 md:p-14 bg-white">
               <form onSubmit={handleSubmit} className="space-y-5">
+                {/* Row 1: Email and Name */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-gray-300 mb-1.5">
+                    <label className="block text-xs font-black text-black mb-1.5 uppercase tracking-wide">
                       Email
                     </label>
                     <input
                       type="email"
                       required
-                      placeholder="email@anda.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full rounded-2xl border border-neon-fuchsia/40 bg-neon-fuchsia/15 p-3.5 text-sm font-semibold text-white placeholder-white/50 focus:border-neon-fuchsia focus:outline-none focus:ring-1 focus:ring-neon-fuchsia"
+                      className="w-full rounded-md border-0 bg-[#FF80BF] p-3 text-sm font-bold text-black placeholder-black/50 focus:outline-none focus:ring-2 focus:ring-black"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-gray-300 mb-1.5">
+                    <label className="block text-xs font-black text-black mb-1.5 uppercase tracking-wide">
                       Name
                     </label>
                     <input
                       type="text"
                       required
-                      placeholder="Nama lengkap..."
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="w-full rounded-2xl border border-neon-fuchsia/40 bg-neon-fuchsia/15 p-3.5 text-sm font-semibold text-white placeholder-white/50 focus:border-neon-fuchsia focus:outline-none focus:ring-1 focus:ring-neon-fuchsia"
+                      className="w-full rounded-md border-0 bg-[#FF80BF] p-3 text-sm font-bold text-black placeholder-black/50 focus:outline-none focus:ring-2 focus:ring-black"
                     />
                   </div>
                 </div>
 
+                {/* Row 2: Phone */}
                 <div>
-                  <label className="block text-xs font-bold text-gray-300 mb-1.5">
+                  <label className="block text-xs font-black text-black mb-1.5 uppercase tracking-wide">
                     Phone
                   </label>
                   <input
                     type="tel"
-                    placeholder="Nomor telepon / WhatsApp..."
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="w-full rounded-2xl border border-neon-fuchsia/40 bg-neon-fuchsia/15 p-3.5 text-sm font-semibold text-white placeholder-white/50 focus:border-neon-fuchsia focus:outline-none focus:ring-1 focus:ring-neon-fuchsia"
+                    className="w-full rounded-md border-0 bg-[#FF80BF] p-3 text-sm font-bold text-black placeholder-black/50 focus:outline-none focus:ring-2 focus:ring-black"
                   />
                 </div>
 
+                {/* Row 3: Message */}
                 <div>
-                  <label className="block text-xs font-bold text-gray-300 mb-1.5">
+                  <label className="block text-xs font-black text-black mb-1.5 uppercase tracking-wide">
                     Message
                   </label>
                   <textarea
                     rows={4}
                     required
-                    placeholder="Tulis pesan atau pertanyaan Anda di sini..."
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    className="w-full rounded-2xl border border-neon-fuchsia/40 bg-neon-fuchsia/15 p-3.5 text-sm font-semibold text-white placeholder-white/50 focus:border-neon-fuchsia focus:outline-none focus:ring-1 focus:ring-neon-fuchsia"
+                    className="w-full rounded-md border-0 bg-[#FF80BF] p-3 text-sm font-bold text-black placeholder-black/50 focus:outline-none focus:ring-2 focus:ring-black"
                   />
                 </div>
 
-                <button
-                  type="submit"
-                  className="flex items-center justify-center gap-2 w-full rounded-full bg-cyber-lime py-3.5 text-sm font-black text-black shadow-lg hover:brightness-110 active:scale-95 transition-all"
-                >
-                  <Send className="h-4 w-4" />
-                  <span>Kirim Pesan Sekarang</span>
-                </button>
+                {/* Row 4: Submit Button */}
+                <div>
+                  <button
+                    type="submit"
+                    className="w-44 rounded-md bg-[#FF007F] py-3.5 text-sm font-black text-black tracking-widest shadow-md transition-all hover:brightness-110 active:scale-95"
+                  >
+                    SEND
+                  </button>
+                </div>
               </form>
             </div>
           </div>
-        </section>
+        </div>
       </main>
 
       <Footer />
