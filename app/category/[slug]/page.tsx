@@ -2,6 +2,7 @@ import React from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CATEGORIES, ARTICLES } from "@/data/mockData";
+import { dbGetCategories, dbGetArticles } from "@/lib/db";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import {
@@ -40,21 +41,29 @@ interface PageProps {
 }
 
 export async function generateStaticParams() {
-  return CATEGORIES.map((cat) => ({
+  const categories = await dbGetCategories();
+  return categories.map((cat) => ({
     slug: cat.slug,
   }));
 }
 
 export default async function CategoryDetailPage({ params }: PageProps) {
   const { slug } = await params;
-  const category = CATEGORIES.find((cat) => cat.slug === slug);
+  const categories = await dbGetCategories();
+  const allArticles = await dbGetArticles();
+
+  const category =
+    categories.find((cat) => cat.slug === slug) ||
+    CATEGORIES.find((cat) => cat.slug === slug);
 
   if (!category) {
     notFound();
   }
 
-  const articles = ARTICLES.filter((art) => art.categorySlug === slug);
-  const IconComponent = iconMap[category.icon];
+  const articles = allArticles.filter(
+    (art) => art.categorySlug === slug && art.status === "published"
+  );
+  const IconComponent = iconMap[category.icon] || Sparkles;
 
   return (
     <div className="flex min-h-screen flex-col bg-graphite-black">

@@ -154,7 +154,7 @@ export default function LoginPage() {
             {/* Quick Demo Fill Buttons */}
             <div className="rounded-2xl border border-white/10 bg-black/40 p-3">
               <span className="text-[11px] font-bold text-gray-400 block mb-2">
-                ⚡ Tombol Isi Cepat (Uji Coba):
+                ⚡ Akun Administrator Resmi:
               </span>
               <div className="flex flex-wrap gap-2">
                 <button
@@ -165,17 +165,7 @@ export default function LoginPage() {
                   }}
                   className="rounded-full bg-neon-fuchsia/20 border border-neon-fuchsia/40 px-3 py-1 text-[11px] font-bold text-white hover:bg-neon-fuchsia/30 transition-all"
                 >
-                  🛡️ Admin
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEmail("farhan@mindmaze.com");
-                    setPassword("farhan123");
-                  }}
-                  className="rounded-full bg-electric-indigo/20 border border-electric-indigo/40 px-3 py-1 text-[11px] font-bold text-white hover:bg-electric-indigo/30 transition-all"
-                >
-                  ✍️ dr. Farhan (Kontributor)
+                  🛡️ Isi Otomatis Admin (admin@mindmaze.com)
                 </button>
               </div>
             </div>

@@ -39,7 +39,7 @@ export default function ContributorPortalPage() {
   // Submit Form state
   const [title, setTitle] = useState("");
   const [highlightWord, setHighlightWord] = useState("");
-  const [categorySlug, setCategorySlug] = useState("technology");
+  const [categorySlug, setCategorySlug] = useState("asal-usul-benda");
   const [readTime, setReadTime] = useState("2 min read");
   const [shortSummary, setShortSummary] = useState("");
   const [content, setContent] = useState("");

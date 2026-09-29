@@ -2,6 +2,7 @@ import React from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ARTICLES } from "@/data/mockData";
+import { dbGetArticles } from "@/lib/db";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import TriviaPopup from "@/components/article/TriviaPopup";
@@ -12,6 +13,7 @@ import {
   Sparkles,
   UserCheck,
   ShieldCheck,
+  ExternalLink,
 } from "lucide-react";
 
 interface PageProps {
@@ -21,14 +23,16 @@ interface PageProps {
 }
 
 export async function generateStaticParams() {
-  return ARTICLES.map((article) => ({
+  const articles = await dbGetArticles();
+  return articles.map((article) => ({
     slug: article.slug,
   }));
 }
 
 export default async function ArticleDetailPage({ params }: PageProps) {
   const { slug } = await params;
-  const article = ARTICLES.find((item) => item.slug === slug);
+  const articles = await dbGetArticles();
+  const article = articles.find((item) => item.slug === slug) || ARTICLES.find((item) => item.slug === slug);
 
   if (!article) {
     notFound();
@@ -164,6 +168,31 @@ export default async function ArticleDetailPage({ params }: PageProps) {
               <p className="mt-1 text-xs text-gray-400 italic">
                 Clue: "{article.crosswordClue.clue}"
               </p>
+            </div>
+          )}
+
+          {/* Sources and Scientific References */}
+          {article.sources && article.sources.length > 0 && (
+            <div className="my-6 rounded-2xl border border-white/10 bg-white/5 p-5">
+              <div className="flex items-center gap-2 text-xs font-black tracking-wider text-cyber-lime uppercase mb-3">
+                <ExternalLink className="h-4 w-4 text-cyber-lime" />
+                <span>Sumber & Referensi Ilmiah / Sejarah</span>
+              </div>
+              <ul className="space-y-2">
+                {article.sources.map((src, idx) => (
+                  <li key={idx} className="flex items-start gap-2 text-xs text-gray-300">
+                    <span className="text-neon-fuchsia font-bold leading-5">•</span>
+                    <a
+                      href={src}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-cyan-400 hover:text-cyan-300 hover:underline break-all leading-5"
+                    >
+                      {src}
+                    </a>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
 

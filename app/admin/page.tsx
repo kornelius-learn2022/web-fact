@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -13,6 +13,7 @@ import {
   FileText,
   PlusCircle,
   Users,
+  UserPlus,
   Tag,
   Flame,
   Check,
@@ -27,7 +28,7 @@ import {
 import ImageUploader from "@/components/ImageUploader";
 
 export default function AdminDashboardPage() {
-  const { user, login } = useAuth();
+  const { user, token, login } = useAuth();
   const {
     articles,
     categories,
@@ -47,7 +48,7 @@ export default function AdminDashboardPage() {
   // New Article Form state
   const [title, setTitle] = useState("");
   const [highlightWord, setHighlightWord] = useState("");
-  const [categorySlug, setCategorySlug] = useState("technology");
+  const [categorySlug, setCategorySlug] = useState("asal-usul-benda");
   const [readTime, setReadTime] = useState("2 min read");
   const [shortSummary, setShortSummary] = useState("");
   const [content, setContent] = useState("");
@@ -67,6 +68,108 @@ export default function AdminDashboardPage() {
 
   // Edit Article state
   const [editingArticle, setEditingArticle] = useState<Article | null>(null);
+
+  // User Management state (PostgreSQL)
+  interface AdminUser {
+    id: string;
+    name: string;
+    email: string;
+    role: "Admin" | "Kontributor";
+    avatarColor: string;
+    createdAt: string;
+  }
+  const [dbUsers, setDbUsers] = useState<AdminUser[]>([]);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+  const [newUserName, setNewUserName] = useState("");
+  const [newUserEmail, setNewUserEmail] = useState("");
+  const [newUserPassword, setNewUserPassword] = useState("");
+  const [newUserRole, setNewUserRole] = useState<"Admin" | "Kontributor">("Kontributor");
+  const [isSubmittingUser, setIsSubmittingUser] = useState(false);
+
+  const fetchUsers = async () => {
+    if (!token) return;
+    setIsLoadingUsers(true);
+    try {
+      const res = await fetch("/api/admin/users", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.users)) {
+        setDbUsers(data.users);
+      }
+    } catch (error) {
+      console.error("Gagal memuat pengguna:", error);
+    } finally {
+      setIsLoadingUsers(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user?.role === "Admin" && token) {
+      fetchUsers();
+    }
+  }, [user, token]);
+
+  const handleAddUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token) return;
+    setIsSubmittingUser(true);
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: newUserName,
+          email: newUserEmail,
+          password: newUserPassword,
+          role: newUserRole,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showNotification(data.message || "Pengguna berhasil ditambahkan!");
+        setNewUserName("");
+        setNewUserEmail("");
+        setNewUserPassword("");
+        setNewUserRole("Kontributor");
+        fetchUsers();
+      } else {
+        showNotification(data.message || "Gagal menambahkan pengguna.");
+      }
+    } catch (error) {
+      showNotification("Gagal terhubung ke server.");
+    } finally {
+      setIsSubmittingUser(false);
+    }
+  };
+
+  const handleDeleteUser = async (id: string, name: string) => {
+    if (!token) return;
+    if (!confirm(`Hapus pengguna "${name}" dari database?`)) return;
+
+    try {
+      const res = await fetch(`/api/admin/users?id=${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await res.json();
+      if (data.success) {
+        showNotification(data.message || "Pengguna berhasil dihapus.");
+        fetchUsers();
+      } else {
+        showNotification(data.message || "Gagal menghapus pengguna.");
+      }
+    } catch (error) {
+      showNotification("Gagal menghubungi server.");
+    }
+  };
 
   const pendingArticles = articles.filter((a) => a.status === "pending");
   const publishedArticles = articles.filter((a) => a.status === "published");
@@ -331,7 +434,7 @@ export default function AdminDashboardPage() {
               }`}
             >
               <Users className="h-4 w-4" />
-              <span>Kontributor ({contributorEmails.length})</span>
+              <span>Kelola Pengguna ({dbUsers.length || 1})</span>
             </button>
 
             <button
@@ -739,56 +842,168 @@ export default function AdminDashboardPage() {
             </div>
           )}
 
-          {/* TAB 4: KELOLA KONTRIBUTOR */}
+          {/* TAB 4: KELOLA PENGGUNA & KONTRIBUTOR */}
           {activeTab === "contributors" && (
-            <div>
-              <div className="mb-6">
-                <h2 className="text-xl font-black text-white">Daftar Penulis & Kontributor</h2>
-                <p className="text-xs text-gray-400">
-                  Semua akun kontributor terdaftar yang telah berkontribusi artikel ke Mind.Maze.
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+              {/* Left Column: Form Tambah Pengguna Baru */}
+              <div className="lg:col-span-5 rounded-3xl border border-white/10 bg-[#1c1c1c] p-6 shadow-xl">
+                <div className="flex items-center gap-2 mb-2 text-cyber-lime">
+                  <UserPlus className="h-5 w-5" />
+                  <h3 className="text-lg font-black text-white">Tambah Pengguna Baru</h3>
+                </div>
+                <p className="text-xs text-gray-400 mb-6">
+                  Daftarkan akun pengguna baru ke database Vercel Postgres agar mereka dapat login dan berkontribusi.
                 </p>
+
+                <form onSubmit={handleAddUser} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-300 mb-1">
+                      Nama Lengkap
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Contoh: Andi Pratama"
+                      value={newUserName}
+                      onChange={(e) => setNewUserName(e.target.value)}
+                      className="w-full rounded-2xl border border-white/20 bg-black/60 p-3 text-xs font-bold text-white focus:border-cyber-lime focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-300 mb-1">
+                      Alamat Email
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="Contoh: andi@mindmaze.com"
+                      value={newUserEmail}
+                      onChange={(e) => setNewUserEmail(e.target.value)}
+                      className="w-full rounded-2xl border border-white/20 bg-black/60 p-3 text-xs text-white focus:border-cyber-lime focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-300 mb-1">
+                      Password (min. 6 karakter)
+                    </label>
+                    <input
+                      type="password"
+                      required
+                      minLength={6}
+                      placeholder="Password login..."
+                      value={newUserPassword}
+                      onChange={(e) => setNewUserPassword(e.target.value)}
+                      className="w-full rounded-2xl border border-white/20 bg-black/60 p-3 text-xs text-white focus:border-cyber-lime focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-300 mb-1">
+                      Peran / Hak Akses
+                    </label>
+                    <select
+                      value={newUserRole}
+                      onChange={(e) => setNewUserRole(e.target.value as "Admin" | "Kontributor")}
+                      className="w-full rounded-2xl border border-white/20 bg-black/60 p-3 text-xs font-bold text-white focus:border-cyber-lime focus:outline-none"
+                    >
+                      <option value="Kontributor">Kontributor (Dapat submit artikel)</option>
+                      <option value="Admin">Admin (Akses penuh dashboard)</option>
+                    </select>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isSubmittingUser}
+                    className="w-full rounded-full bg-cyber-lime py-3.5 text-xs font-black text-black shadow-lg hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
+                  >
+                    {isSubmittingUser ? "Menyimpan ke Database..." : "+ Daftarkan Pengguna ke Database"}
+                  </button>
+                </form>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {contributorEmails.map((email) => {
-                  const authorArticles = articles.filter((a) => a.author.email === email);
-                  const firstAuthor = authorArticles[0]?.author;
-                  if (!firstAuthor) return null;
+              {/* Right Column: Daftar Pengguna Aktif */}
+              <div className="lg:col-span-7 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-black text-white">
+                      Pengguna Terdaftar di Database ({dbUsers.length})
+                    </h2>
+                    <p className="text-xs text-gray-400">
+                      Semua akun tersimpan aman di Vercel Postgres.
+                    </p>
+                  </div>
+                  <button
+                    onClick={fetchUsers}
+                    className="rounded-full border border-white/20 bg-white/5 px-3 py-1 text-xs font-bold text-gray-300 hover:bg-white/10"
+                  >
+                    Refresh 🔄
+                  </button>
+                </div>
 
-                  return (
-                    <div
-                      key={email}
-                      className="rounded-3xl border border-white/10 bg-[#1e1e1e] p-6 flex flex-col justify-between"
-                    >
-                      <div className="flex items-center gap-3">
+                {isLoadingUsers && dbUsers.length === 0 ? (
+                  <div className="rounded-3xl border border-white/10 bg-[#1e1e1e] p-8 text-center text-xs text-gray-400">
+                    Memuat daftar pengguna dari database...
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {dbUsers.map((u) => {
+                      const userArticleCount = articles.filter(
+                        (a) => a.author.email.toLowerCase() === u.email.toLowerCase()
+                      ).length;
+                      const isMainAdmin = u.email === "admin@mindmaze.com" || u.id === "usr-admin-1";
+
+                      return (
                         <div
-                          className={`flex h-12 w-12 items-center justify-center rounded-2xl text-base font-black text-black ${firstAuthor.avatarColor}`}
+                          key={u.id}
+                          className="rounded-3xl border border-white/10 bg-[#1e1e1e] p-5 flex flex-col justify-between"
                         >
-                          {firstAuthor.name.charAt(0)}
-                        </div>
-                        <div>
-                          <h4 className="font-black text-white">{firstAuthor.name}</h4>
-                          <p className="text-xs text-gray-400">{email}</p>
-                        </div>
-                      </div>
+                          <div>
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex items-center gap-3">
+                                <div
+                                  className={`flex h-11 w-11 items-center justify-center rounded-2xl text-base font-black text-black ${u.avatarColor}`}
+                                >
+                                  {u.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                  <h4 className="font-black text-white text-sm">{u.name}</h4>
+                                  <p className="text-xs text-gray-400 truncate max-w-[150px]">{u.email}</p>
+                                </div>
+                              </div>
 
-                      <div className="mt-6 border-t border-white/10 pt-4 flex items-center justify-between text-xs">
-                        <span className="font-bold text-gray-400">
-                          {authorArticles.length} Artikel Dibuat
-                        </span>
-                        <span
-                          className={`rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase ${
-                            firstAuthor.role === "Admin"
-                              ? "bg-neon-fuchsia/20 text-neon-fuchsia border border-neon-fuchsia/40"
-                              : "bg-electric-indigo/20 text-white border border-electric-indigo/40"
-                          }`}
-                        >
-                          {firstAuthor.role}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
+                              {!isMainAdmin && (
+                                <button
+                                  onClick={() => handleDeleteUser(u.id, u.name)}
+                                  className="text-gray-500 hover:text-rose-400 p-1 transition-colors"
+                                  title="Hapus Pengguna"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="mt-5 border-t border-white/10 pt-3 flex items-center justify-between text-xs">
+                            <span className="font-bold text-gray-400">
+                              {userArticleCount} Artikel
+                            </span>
+                            <span
+                              className={`rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase ${
+                                u.role === "Admin"
+                                  ? "bg-neon-fuchsia/20 text-neon-fuchsia border border-neon-fuchsia/40"
+                                  : "bg-electric-indigo/20 text-white border border-electric-indigo/40"
+                              }`}
+                            >
+                              {u.role}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           )}
