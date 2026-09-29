@@ -26,10 +26,21 @@ export interface DbUser {
   status: "pending" | "approved" | "rejected";
 }
 
+export interface ContactMessage {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  message: string;
+  createdAt: string;
+  status: "unread" | "read";
+}
+
 // In-memory fallback stores for offline/local development without DB URL
 let memoryArticles: Article[] = [...INITIAL_ARTICLES];
 let memoryCategories: Category[] = [...INITIAL_CATEGORIES];
 let memoryUsers: DbUser[] = [];
+let memoryMessages: ContactMessage[] = [];
 let isDbInitialized = false;
 
 async function ensureDefaultMemoryUsers() {
@@ -97,6 +108,19 @@ export async function initDb() {
         avatar_color TEXT NOT NULL DEFAULT 'bg-cyber-lime',
         created_at TEXT NOT NULL,
         status TEXT NOT NULL DEFAULT 'approved'
+      );
+    `;
+
+    // 4. Contact Messages table
+    await sql`
+      CREATE TABLE IF NOT EXISTS contact_messages (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        email TEXT NOT NULL,
+        phone TEXT DEFAULT '',
+        message TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'unread'
       );
     `;
 
@@ -527,4 +551,92 @@ export async function dbUpdateUserName(email: string, newName: string): Promise<
     WHERE LOWER(email) = LOWER(${email.trim()});
   `;
   return dbFindUserByEmail(email);
+}
+
+// ----------------- CONTACT MESSAGES METHODS -----------------
+
+export async function dbCreateContactMessage(data: {
+  name: string;
+  email: string;
+  phone?: string;
+  message: string;
+}): Promise<ContactMessage> {
+  const newMsg: ContactMessage = {
+    id: `msg-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    name: data.name.trim(),
+    email: data.email.trim(),
+    phone: (data.phone || "").trim(),
+    message: data.message.trim(),
+    createdAt: new Date().toISOString(),
+    status: "unread",
+  };
+
+  const sql = getSql();
+  if (!sql) {
+    memoryMessages.unshift(newMsg);
+    return newMsg;
+  }
+
+  await initDb();
+  await sql`
+    INSERT INTO contact_messages (id, name, email, phone, message, created_at, status)
+    VALUES (${newMsg.id}, ${newMsg.name}, ${newMsg.email}, ${newMsg.phone || ""}, ${newMsg.message}, ${newMsg.createdAt}, ${newMsg.status});
+  `;
+  return newMsg;
+}
+
+export async function dbGetContactMessages(): Promise<ContactMessage[]> {
+  const sql = getSql();
+  if (!sql) {
+    return memoryMessages;
+  }
+
+  await initDb();
+  try {
+    const rows = await sql`
+      SELECT id, name, email, phone, message, created_at as "createdAt", status
+      FROM contact_messages
+      ORDER BY created_at DESC;
+    `;
+    return rows as ContactMessage[];
+  } catch (error) {
+    console.error("Error fetching contact messages from DB:", error);
+    return memoryMessages;
+  }
+}
+
+export async function dbUpdateContactMessageStatus(
+  id: string,
+  status: "unread" | "read"
+): Promise<boolean> {
+  const sql = getSql();
+  if (!sql) {
+    const msg = memoryMessages.find((m) => m.id === id);
+    if (!msg) return false;
+    msg.status = status;
+    return true;
+  }
+
+  await initDb();
+  await sql`
+    UPDATE contact_messages
+    SET status = ${status}
+    WHERE id = ${id};
+  `;
+  return true;
+}
+
+export async function dbDeleteContactMessage(id: string): Promise<boolean> {
+  const sql = getSql();
+  if (!sql) {
+    memoryMessages = memoryMessages.filter((m) => m.id !== id);
+    return true;
+  }
+
+  await initDb();
+  await sql`
+    DELETE FROM contact_messages
+    WHERE id = ${id};
+  `;
+  return true;
 }

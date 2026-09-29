@@ -25,6 +25,10 @@ import {
   ArrowLeft,
   AlertCircle,
   Sparkles,
+  Mail,
+  MessageSquare,
+  PhoneCall,
+  Clock,
 } from "lucide-react";
 import ImageUploader from "@/components/ImageUploader";
 
@@ -43,7 +47,7 @@ export default function AdminDashboardPage() {
   } = useData();
 
   const [activeTab, setActiveTab] = useState<
-    "verify" | "articles" | "create" | "contributors" | "categories"
+    "verify" | "articles" | "create" | "contributors" | "categories" | "messages"
   >("verify");
 
   // New Article Form state
@@ -92,6 +96,19 @@ export default function AdminDashboardPage() {
   const [sourcesInput, setSourcesInput] = useState("");
   const [editSourcesInput, setEditSourcesInput] = useState("");
 
+  // Contact Messages state
+  interface ContactMessageItem {
+    id: string;
+    name: string;
+    email: string;
+    phone?: string;
+    message: string;
+    createdAt: string;
+    status: "unread" | "read";
+  }
+  const [messages, setMessages] = useState<ContactMessageItem[]>([]);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+
   const fetchUsers = async () => {
     if (!token) return;
     setIsLoadingUsers(true);
@@ -112,9 +129,79 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const fetchMessages = async () => {
+    if (!token) return;
+    setIsLoadingMessages(true);
+    try {
+      const res = await fetch("/api/admin/messages", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.messages)) {
+        setMessages(data.messages);
+      }
+    } catch (error) {
+      console.error("Gagal memuat pesan kontak:", error);
+    } finally {
+      setIsLoadingMessages(false);
+    }
+  };
+
+  const handleToggleMessageStatus = async (id: string, currentStatus: "unread" | "read") => {
+    if (!token) return;
+    const nextStatus = currentStatus === "unread" ? "read" : "unread";
+    try {
+      const res = await fetch("/api/admin/messages", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ id, status: nextStatus }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showNotification(
+          nextStatus === "read"
+            ? "Pesan ditandai sudah dibaca ✅"
+            : "Pesan ditandai belum dibaca"
+        );
+        fetchMessages();
+      }
+    } catch {
+      showNotification("Gagal memperbarui status pesan.");
+    }
+  };
+
+  const handleDeleteMessage = async (id: string, senderName: string) => {
+    if (!token) return;
+    if (!confirm(`Hapus pesan dari "${senderName}"?`)) return;
+
+    try {
+      const res = await fetch(`/api/admin/messages?id=${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await res.json();
+      if (data.success) {
+        showNotification("Pesan berhasil dihapus.");
+        fetchMessages();
+      } else {
+        showNotification(data.message || "Gagal menghapus pesan.");
+      }
+    } catch {
+      showNotification("Gagal menghubungi server.");
+    }
+  };
+
   useEffect(() => {
     if (user?.role === "Admin" && token) {
       fetchUsers();
+      fetchMessages();
     }
   }, [user, token]);
 
@@ -514,6 +601,23 @@ export default function AdminDashboardPage() {
             >
               <Tag className="h-4 w-4" />
               <span>Kelola Kategori ({categories.length})</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab("messages")}
+              className={`flex items-center gap-2 rounded-2xl px-5 py-2.5 text-xs font-black transition-all ${
+                activeTab === "messages"
+                  ? "bg-[#FF007F] text-black shadow-lg shadow-[#FF007F]/30"
+                  : "bg-white/5 text-gray-300 hover:bg-white/10"
+              }`}
+            >
+              <Mail className="h-4 w-4" />
+              <span>Pesan Masuk ({messages.length})</span>
+              {messages.filter((m) => m.status === "unread").length > 0 && (
+                <span className="rounded-full bg-cyber-lime text-black font-black px-2 py-0.5 text-[10px] animate-pulse">
+                  {messages.filter((m) => m.status === "unread").length} baru
+                </span>
+              )}
             </button>
           </div>
 
@@ -1272,6 +1376,171 @@ export default function AdminDashboardPage() {
                   </button>
                 </form>
               </div>
+            </div>
+          )}
+
+          {/* TAB 6: PESAN MASUK DARI CONTACT US */}
+          {activeTab === "messages" && (
+            <div>
+              <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-black text-white flex items-center gap-2">
+                    <Mail className="h-5 w-5 text-[#FF007F]" />
+                    Pesan Masuk Contact Us
+                  </h2>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Daftar pesan dan masukan yang dikirimkan oleh pengguna melalui halaman Get In Touch.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={fetchMessages}
+                    disabled={isLoadingMessages}
+                    className="flex items-center gap-1.5 rounded-full border border-white/20 bg-white/5 px-4 py-2 text-xs font-bold text-gray-300 hover:bg-white/10 hover:text-white transition-all disabled:opacity-50"
+                  >
+                    <span>Segarkan Pesan</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Messages Summary Metrics */}
+              <div className="mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="rounded-2xl border border-white/10 bg-[#1e1e1e] p-4">
+                  <span className="text-xs font-bold text-gray-400">Total Pesan Masuk</span>
+                  <p className="mt-1 text-2xl font-black text-white">{messages.length}</p>
+                </div>
+                <div className="rounded-2xl border border-cyber-lime/40 bg-[#1e1e1e] p-4">
+                  <span className="text-xs font-bold text-gray-400">Belum Dibaca</span>
+                  <p className="mt-1 text-2xl font-black text-cyber-lime">
+                    {messages.filter((m) => m.status === "unread").length}
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-[#1e1e1e] p-4">
+                  <span className="text-xs font-bold text-gray-400">Sudah Dibaca</span>
+                  <p className="mt-1 text-2xl font-black text-gray-300">
+                    {messages.filter((m) => m.status === "read").length}
+                  </p>
+                </div>
+              </div>
+
+              {/* Messages List */}
+              {isLoadingMessages ? (
+                <div className="rounded-3xl border border-white/10 bg-[#1c1c1c] p-12 text-center text-gray-400">
+                  <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-cyber-lime border-t-transparent mb-3" />
+                  <p className="text-sm font-bold text-white">Memuat pesan masuk...</p>
+                </div>
+              ) : messages.length === 0 ? (
+                <div className="rounded-3xl border border-white/10 bg-[#1c1c1c] p-12 text-center text-gray-400">
+                  <Mail className="mx-auto h-12 w-12 text-[#FF007F]/60 mb-3" />
+                  <p className="text-base font-bold text-white">Belum ada pesan masuk!</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Pesan yang dikirim pengunjung melalui formulir Get In Touch akan otomatis masuk dan tersimpan di sini.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {messages.map((msg) => {
+                    const isUnread = msg.status === "unread";
+                    return (
+                      <div
+                        key={msg.id}
+                        className={`rounded-3xl border p-6 transition-all shadow-xl ${
+                          isUnread
+                            ? "border-cyber-lime/50 bg-[#1f1a2e]"
+                            : "border-white/10 bg-[#1c1c1c]"
+                        }`}
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/10 pb-4">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`flex h-11 w-11 items-center justify-center rounded-2xl text-sm font-black text-black ${
+                                isUnread ? "bg-cyber-lime" : "bg-white/20 text-white"
+                              }`}
+                            >
+                              {msg.name ? msg.name.charAt(0).toUpperCase() : "U"}
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h3 className="text-base font-black text-white">{msg.name}</h3>
+                                {isUnread ? (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-cyber-lime/20 border border-cyber-lime/60 px-2.5 py-0.5 text-[10px] font-black text-cyber-lime">
+                                    <span className="h-1.5 w-1.5 rounded-full bg-cyber-lime animate-pulse" />
+                                    Baru
+                                  </span>
+                                ) : (
+                                  <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold text-gray-400">
+                                    Dibaca
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex flex-wrap items-center gap-4 mt-1 text-xs text-gray-400">
+                                <a
+                                  href={`mailto:${msg.email}`}
+                                  className="text-gray-300 hover:text-cyber-lime underline decoration-dotted"
+                                >
+                                  {msg.email}
+                                </a>
+                                {msg.phone && (
+                                  <span className="flex items-center gap-1 text-gray-400">
+                                    <PhoneCall className="h-3 w-3" />
+                                    {msg.phone}
+                                  </span>
+                                )}
+                                <span className="flex items-center gap-1 text-gray-500 text-[11px]">
+                                  <Clock className="h-3 w-3" />
+                                  {new Date(msg.createdAt).toLocaleString("id-ID", {
+                                    day: "numeric",
+                                    month: "short",
+                                    year: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleToggleMessageStatus(msg.id, msg.status)}
+                              className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all ${
+                                isUnread
+                                  ? "bg-cyber-lime text-black hover:brightness-110"
+                                  : "border border-white/20 bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white"
+                              }`}
+                            >
+                              {isUnread ? "Tandai Dibaca" : "Tandai Belum Dibaca"}
+                            </button>
+                            <a
+                              href={`mailto:${msg.email}?subject=Balasan Mind.Maze untuk ${encodeURIComponent(
+                                msg.name
+                              )}`}
+                              className="rounded-xl border border-white/20 bg-white/5 px-3.5 py-1.5 text-xs font-bold text-gray-300 hover:bg-white/10 hover:text-white"
+                            >
+                              Balas
+                            </a>
+                            <button
+                              onClick={() => handleDeleteMessage(msg.id, msg.name)}
+                              className="rounded-xl border border-red-500/30 bg-red-500/10 p-2 text-red-400 hover:bg-red-500 hover:text-white transition-colors"
+                              title="Hapus Pesan"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Message Content */}
+                        <div className="mt-4 rounded-2xl bg-black/50 p-4 border border-white/5">
+                          <p className="text-xs sm:text-sm text-gray-200 leading-relaxed whitespace-pre-wrap">
+                            {msg.message}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 

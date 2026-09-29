@@ -11,20 +11,41 @@ export default function ContactUsPage() {
   const [phone, setPhone] = useState("");
   const [message, setMessage] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !email || !message) return;
 
-    setSubmitted(true);
-    setName("");
-    setEmail("");
-    setPhone("");
-    setMessage("");
+    setIsSubmitting(true);
+    setErrorMessage(null);
 
-    setTimeout(() => {
-      setSubmitted(false);
-    }, 5000);
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, phone, message }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSubmitted(true);
+        setName("");
+        setEmail("");
+        setPhone("");
+        setMessage("");
+
+        setTimeout(() => {
+          setSubmitted(false);
+        }, 6000);
+      } else {
+        setErrorMessage(data.message || "Gagal mengirim pesan.");
+      }
+    } catch {
+      setErrorMessage("Terjadi kendala jaringan saat mengirim pesan.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -89,7 +110,13 @@ export default function ContactUsPage() {
               {submitted && (
                 <div className="mt-8 flex items-center gap-2 rounded-2xl bg-cyber-lime/30 border border-cyber-lime p-3 text-xs font-black text-black animate-in fade-in">
                   <CheckCircle2 className="h-4 w-4 text-black flex-shrink-0" />
-                  <span>Pesan Anda berhasil dikirim! Tim kami akan segera menghubungi Anda.</span>
+                  <span>Pesan Anda berhasil dikirim ke Admin Mind.Maze! Kami akan segera meninjau pesan Anda.</span>
+                </div>
+              )}
+
+              {errorMessage && (
+                <div className="mt-8 flex items-center gap-2 rounded-2xl bg-red-100 border border-red-500 p-3 text-xs font-black text-red-600 animate-in fade-in">
+                  <span>{errorMessage}</span>
                 </div>
               )}
             </div>
@@ -157,9 +184,10 @@ export default function ContactUsPage() {
                 <div>
                   <button
                     type="submit"
-                    className="w-44 rounded-md bg-[#FF007F] py-3.5 text-sm font-black text-black tracking-widest shadow-md transition-all hover:brightness-110 active:scale-95"
+                    disabled={isSubmitting}
+                    className="w-44 rounded-md bg-[#FF007F] py-3.5 text-sm font-black text-black tracking-widest shadow-md transition-all hover:brightness-110 active:scale-95 disabled:opacity-50"
                   >
-                    SEND
+                    {isSubmitting ? "SENDING..." : "SEND"}
                   </button>
                 </div>
               </form>
