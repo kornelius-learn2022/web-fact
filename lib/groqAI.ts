@@ -4,9 +4,8 @@ import { INITIAL_ARTICLES } from "@/data/mockData";
 const GROQ_API_KEY = process.env.GROQ_API_KEY || "";
 
 const AI_LAYERS = [
-  { model: "llama-3.3-70b-versatile", name: "Sistem Cerdas" },
-  { model: "llama-3.1-8b-instant", name: "Sistem Cerdas" },
-  { model: "mixtral-8x7b-32768", name: "Sistem Cerdas" },
+  { model: "qwen/qwen3.8-27b", name: "Sistem Cerdas Qwen" },
+  { model: "openai/gpt-oss-20b", name: "Sistem Cerdas GPT" },
 ];
 
 export interface AICrosswordWord {
@@ -44,14 +43,165 @@ export interface AIQuizResult {
   layer: number;
 }
 
+// 4 Verified 100% Interlocking Crossword Presets Grounded in Mind.Maze 16 Articles
+export const ARTICLE_CROSSWORD_PRESETS: AICrosswordResult[] = [
+  {
+    title: "Teka-Teki Silang: Sistem Komputasi & Budaya",
+    category: "Rahasia Sistem dan Inovasi",
+    grid: { rows: 7, cols: 9 },
+    words: [
+      {
+        number: 1,
+        direction: "across",
+        word: "BLUETOOTH",
+        clue: "Teknologi nirkabel yang dinamai dari Raja Viking abad ke-10 Harald Gormsson yang menyatukan Skandinavia.",
+        startRow: 1,
+        startCol: 0,
+      },
+      {
+        number: 2,
+        direction: "down",
+        word: "LOUVRE",
+        clue: "Museum seni ternama di Paris tempat lukisan legendaris Mona Lisa dipajang dan pernah dicuri tahun 1911.",
+        startRow: 1,
+        startCol: 1,
+      },
+      {
+        number: 3,
+        direction: "across",
+        word: "RESTART",
+        clue: "Fungsi reboot komputer (Ctrl+Alt+Del) ciptaan David Bradley di IBM untuk mengatasi sistem freeze.",
+        startRow: 5,
+        startCol: 1,
+      },
+    ],
+    modelUsed: "Kurasi Fakta Mind.Maze",
+    layer: 1,
+  },
+  {
+    title: "Teka-Teki Silang: Asal-Usul & Sejarah Teknologi",
+    category: "Asal-Usul Benda Sehari-hari",
+    grid: { rows: 9, cols: 10 },
+    words: [
+      {
+        number: 1,
+        direction: "across",
+        word: "ANTOSIANIN",
+        clue: "Pigmen alami pemberi warna ungu pekat pada varietas wortel domestikasi awal di Persia abad ke-10.",
+        startRow: 0,
+        startCol: 0,
+      },
+      {
+        number: 2,
+        direction: "down",
+        word: "SANGGURDI",
+        clue: "Pijakan kaki pada pelana kuda tempat hak sepatu tentara kavaleri Persia pertama kali dikaitkan.",
+        startRow: 0,
+        startCol: 4,
+      },
+      {
+        number: 3,
+        direction: "across",
+        word: "DEBUGGING",
+        clue: "Istilah pelacakan dan perbaikan bug komputer yang diabadikan Grace Hopper usai insiden ngengat 1947.",
+        startRow: 3,
+        startCol: 0,
+      },
+    ],
+    modelUsed: "Kurasi Fakta Mind.Maze",
+    layer: 1,
+  },
+  {
+    title: "Teka-Teki Silang: Misteri Otak & Perilaku",
+    category: "Misteri Perilaku Manusia",
+    grid: { rows: 8, cols: 9 },
+    words: [
+      {
+        number: 1,
+        direction: "across",
+        word: "DOPAMIN",
+        clue: "Zat neurotransmiter otak yang mengalir deras saat menikmati makanan atau minuman berlabel harga mahal.",
+        startRow: 1,
+        startCol: 1,
+      },
+      {
+        number: 2,
+        direction: "down",
+        word: "NAVIGASI",
+        clue: "Sistem penentuan koordinat rute GPS yang dulunya sengaja dikaburkan akurasinya oleh militer AS.",
+        startRow: 0,
+        startCol: 4,
+      },
+      {
+        number: 3,
+        direction: "across",
+        word: "DIFUSI",
+        clue: "Penyebaran rasa tanggung jawab dalam fenomena bystander effect yang menghambat tindakan menolong.",
+        startRow: 6,
+        startCol: 0,
+      },
+    ],
+    modelUsed: "Kurasi Fakta Mind.Maze",
+    layer: 1,
+  },
+  {
+    title: "Teka-Teki Silang: Budaya Pop & Mitos",
+    category: "Sisi Unik Pop Culture",
+    grid: { rows: 10, cols: 8 },
+    words: [
+      {
+        number: 1,
+        direction: "across",
+        word: "FOLKLOR",
+        clue: "Cerita rakyat dan adat tradisi turun-temurun di balik kebiasaan mengetuk kayu 'amit-amit'.",
+        startRow: 2,
+        startCol: 0,
+      },
+      {
+        number: 2,
+        direction: "down",
+        word: "DIFUSI",
+        clue: "Penyebaran rasa tanggung jawab pada kerumunan orang banyak yang menghambat tindakan darurat.",
+        startRow: 0,
+        startCol: 0,
+      },
+      {
+        number: 3,
+        direction: "down",
+        word: "RETRAKSI",
+        clue: "Peristiwa menyusutnya kulit akibat dehidrasi pasca-kematian yang menimbulkan ilusi kuku memanjang.",
+        startRow: 2,
+        startCol: 6,
+      },
+    ],
+    modelUsed: "Kurasi Fakta Mind.Maze",
+    layer: 1,
+  },
+];
+
 // Compact context string generated from the actual 16 articles
-function getArticlesContext(): string {
-  return INITIAL_ARTICLES.map(
-    (a, idx) =>
-      `${idx + 1}. [${a.category}] "${a.title}": ${a.shortSummary}. ` +
-      (a.crosswordClue ? `Kata kunci: ${a.crosswordClue.word} (${a.crosswordClue.clue}). ` : "") +
-      (a.triviaPopup ? `Trivia: ${a.triviaPopup.text}.` : "")
-  ).join("\n");
+function getArticlesContext(category?: string): string {
+  const filtered =
+    category && category !== "Semua Kategori"
+      ? INITIAL_ARTICLES.filter(
+          (a) =>
+            a.category.toLowerCase().includes(category.toLowerCase()) ||
+            a.categorySlug === category
+        )
+      : INITIAL_ARTICLES;
+
+  const targetList = filtered.length > 0 ? filtered : INITIAL_ARTICLES;
+
+  return targetList
+    .map(
+      (a, idx) =>
+        `${idx + 1}. [Kategori: ${a.category}] "${a.title}": ${a.shortSummary}. ` +
+        (a.crosswordClue
+          ? `KATA KUNCI UTAMA: ${a.crosswordClue.word} (Petunjuk: ${a.crosswordClue.clue}). `
+          : "") +
+        (a.triviaPopup ? `Fakta: ${a.triviaPopup.text}.` : "")
+    )
+    .join("\n");
 }
 
 async function callGroqLayers(
@@ -87,7 +237,7 @@ async function callGroqLayers(
         if (content) {
           return {
             text: content,
-            modelName: "Sistem Cerdas",
+            modelName: layer.name,
             layer: i + 1,
           };
         }
@@ -114,46 +264,248 @@ function cleanJsonText(raw: string): string {
 }
 
 /**
+ * Robust 2D Crossword Interlocking Layout Engine
+ * Validates or computes coordinates so words intersect at identical letters with 0 collisions.
+ */
+function buildInterlockingCrossword(
+  rawWords: any[],
+  category: string = "Semua Kategori",
+  modelName: string = "Sistem Cerdas (Groq AI)",
+  layer: number = 1
+): AICrosswordResult | null {
+  if (!rawWords || !Array.isArray(rawWords) || rawWords.length === 0) {
+    return null;
+  }
+
+  // Sanitize words
+  const cleanWords = rawWords
+    .map((item) => ({
+      word: (item.word || "").toUpperCase().replace(/[^A-Z]/g, ""),
+      clue: (item.clue || "").trim(),
+      direction: item.direction as "across" | "down" | undefined,
+      startRow: typeof item.startRow === "number" ? item.startRow : undefined,
+      startCol: typeof item.startCol === "number" ? item.startCol : undefined,
+      number: typeof item.number === "number" ? item.number : undefined,
+    }))
+    .filter((item) => item.word.length >= 3 && item.clue.length > 0);
+
+  if (cleanWords.length < 2) return null;
+
+  // 1. Check if AI already provided coordinates that are 100% collision-free & interlocking
+  let aiCoordinatesValid = true;
+  let intersectionCount = 0;
+  const gridMap = new Map<string, string>();
+
+  for (const item of cleanWords) {
+    if (
+      typeof item.startRow !== "number" ||
+      typeof item.startCol !== "number" ||
+      !item.direction
+    ) {
+      aiCoordinatesValid = false;
+      break;
+    }
+
+    for (let i = 0; i < item.word.length; i++) {
+      const r = item.direction === "across" ? item.startRow : item.startRow + i;
+      const c = item.direction === "across" ? item.startCol + i : item.startCol;
+      const key = `${r},${c}`;
+      if (gridMap.has(key)) {
+        if (gridMap.get(key) !== item.word[i]) {
+          aiCoordinatesValid = false;
+          break;
+        } else {
+          intersectionCount++;
+        }
+      } else {
+        gridMap.set(key, item.word[i]);
+      }
+    }
+    if (!aiCoordinatesValid) break;
+  }
+
+  if (aiCoordinatesValid && intersectionCount > 0) {
+    let minR = Infinity,
+      minC = Infinity,
+      maxR = -Infinity,
+      maxC = -Infinity;
+
+    cleanWords.forEach((item) => {
+      for (let i = 0; i < item.word.length; i++) {
+        const r = item.direction === "across" ? item.startRow! : item.startRow! + i;
+        const c = item.direction === "across" ? item.startCol! + i : item.startCol!;
+        if (r < minR) minR = r;
+        if (c < minC) minC = c;
+        if (r > maxR) maxR = r;
+        if (c > maxC) maxC = c;
+      }
+    });
+
+    const normalized = cleanWords.map((item, idx) => ({
+      number: idx + 1,
+      direction: item.direction!,
+      word: item.word,
+      clue: item.clue,
+      startRow: item.startRow! - minR,
+      startCol: item.startCol! - minC,
+    }));
+
+    return {
+      title: "Teka-Teki Silang Fakta Mind.Maze",
+      category,
+      grid: { rows: maxR - minR + 1, cols: maxC - minC + 1 },
+      words: normalized,
+      modelUsed: modelName,
+      layer,
+    };
+  }
+
+  // 2. If AI coordinates were imperfect or missing, compute exact interlocking geometry
+  const placed: AICrosswordWord[] = [];
+  const cellMap = new Map<string, string>();
+
+  function setChar(r: number, c: number, ch: string) {
+    cellMap.set(`${r},${c}`, ch);
+  }
+  function getChar(r: number, c: number) {
+    return cellMap.get(`${r},${c}`);
+  }
+
+  // Place first word horizontally
+  const w0 = cleanWords[0];
+  const firstPlaced: AICrosswordWord = {
+    number: 1,
+    direction: "across",
+    word: w0.word,
+    clue: w0.clue,
+    startRow: 0,
+    startCol: 0,
+  };
+  for (let i = 0; i < w0.word.length; i++) {
+    setChar(0, i, w0.word[i]);
+  }
+  placed.push(firstPlaced);
+
+  let numSeq = 2;
+  const pool = [...cleanWords.slice(1)];
+
+  for (const cand of pool) {
+    let placedSuccess = false;
+
+    for (const p of placed) {
+      if (placedSuccess) break;
+      const targetDir = p.direction === "across" ? "down" : "across";
+
+      for (let i = 0; i < p.word.length; i++) {
+        if (placedSuccess) break;
+        const pChar = p.word[i];
+        const pR = p.direction === "across" ? p.startRow : p.startRow + i;
+        const pC = p.direction === "across" ? p.startCol + i : p.startCol;
+
+        for (let j = 0; j < cand.word.length; j++) {
+          if (cand.word[j] === pChar) {
+            const cStartRow = targetDir === "across" ? pR : pR - j;
+            const cStartCol = targetDir === "across" ? pC - j : pC;
+
+            let canPlace = true;
+            for (let k = 0; k < cand.word.length; k++) {
+              const cR = targetDir === "across" ? cStartRow : cStartRow + k;
+              const cC = targetDir === "across" ? cStartCol + k : cStartCol;
+              const existing = getChar(cR, cC);
+              if (existing && existing !== cand.word[k]) {
+                canPlace = false;
+                break;
+              }
+            }
+
+            if (canPlace) {
+              const newPlaced: AICrosswordWord = {
+                number: numSeq++,
+                direction: targetDir,
+                word: cand.word,
+                clue: cand.clue,
+                startRow: cStartRow,
+                startCol: cStartCol,
+              };
+              for (let k = 0; k < cand.word.length; k++) {
+                const cR = targetDir === "across" ? cStartRow : cStartRow + k;
+                const cC = targetDir === "across" ? cStartCol + k : cStartCol;
+                setChar(cR, cC, cand.word[k]);
+              }
+              placed.push(newPlaced);
+              placedSuccess = true;
+              break;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  if (placed.length >= 2) {
+    let minR = Infinity,
+      minC = Infinity,
+      maxR = -Infinity,
+      maxC = -Infinity;
+
+    placed.forEach((p) => {
+      for (let i = 0; i < p.word.length; i++) {
+        const r = p.direction === "across" ? p.startRow : p.startRow + i;
+        const c = p.direction === "across" ? p.startCol + i : p.startCol;
+        if (r < minR) minR = r;
+        if (c < minC) minC = c;
+        if (r > maxR) maxR = r;
+        if (c > maxC) maxC = c;
+      }
+    });
+
+    placed.forEach((p) => {
+      p.startRow -= minR;
+      p.startCol -= minC;
+    });
+
+    return {
+      title: "Teka-Teki Silang Fakta Mind.Maze",
+      category,
+      grid: { rows: maxR - minR + 1, cols: maxC - minC + 1 },
+      words: placed,
+      modelUsed: modelName,
+      layer,
+    };
+  }
+
+  return null;
+}
+
+/**
  * Generates an interlocking 2D Crossword Puzzle GROUNDED STRICTLY on Mind.Maze articles.
  */
 export async function generateAICrossword(
   category: string = "Semua Kategori",
   wordCount?: number
 ): Promise<AICrosswordResult> {
-  const articlesContext = getArticlesContext();
+  const articlesContext = getArticlesContext(category);
 
   const prompt = `Anda adalah master Teka-Teki Silang (TTS) edukatif untuk platform Mind.Maze.
 Tugas Anda adalah menyusun Teka-Teki Silang yang DIAMBIL KHUSUS DAN HANYA DARI ARTIKEL-ARTIKEL RESMI MIND.MAZE BERIKUT:
 ${articlesContext}
 
 Aturan Ketat:
-1. Kata jawaban dan petunjuk (clue) HARUS diambil dari isi fakta artikel di atas (contoh: BLUETOOTH, FLEMING, QWERTY, LOUVRE, PERSIA, ORANYE, PLACEBO, dsb).
-2. Setiap kata harus berupa 1 KATA BAHASA INDONESIA / NAMA YANG VALID (HURUF KAPITAL A-Z, tanpa spasi, tanpa angka).
-3. Buatlah minimal 2 hingga 4 kata saling berpotongan (interlocking) pada baris (startRow) dan kolom (startCol) koordinat 0-indexed yang konsisten dan akurat.
-4. Tentukan ukuran grid { rows, cols } yang cukup memuat kata.
-5. Clue harus spesifik merujuk fakta pada artikel Mind.Maze.
-
-Format JSON yang wajib dikembalikan:
+1. Kata jawaban dan petunjuk (clue) HARUS diambil dari fakta pada artikel Mind.Maze di atas (misal: BLUETOOTH, LOUVRE, RESTART, ANTOSIANIN, SANGGURDI, DEBUGGING, DOPAMIN, NAVIGASI, FOLKLOR, RETRAKSI, dsb).
+2. Pilihlah 2 hingga 4 kata yang memiliki huruf sama agar dapat saling berpotongan (interlocking) pada grid teka-teki silang.
+3. Clue harus mendidik, menarik, dan secara akurat menguji pemahaman fakta artikel.
+4. Kembalikan format JSON murni:
 {
   "title": "Teka-Teki Silang Fakta Mind.Maze",
   "category": "${category}",
-  "grid": { "rows": 8, "cols": 10 },
   "words": [
     {
-      "number": 1,
-      "direction": "across",
       "word": "BLUETOOTH",
-      "clue": "Teknologi nirkabel yang dinamai dari Raja Viking abad ke-10 Harald Gormsson.",
-      "startRow": 1,
-      "startCol": 0
+      "clue": "Teknologi nirkabel yang dinamai dari Raja Viking abad ke-10 Harald Gormsson yang menyatukan Skandinavia."
     },
     {
-      "number": 2,
-      "direction": "down",
       "word": "LOUVRE",
-      "clue": "Museum ternama di Paris tempat lukisan Mona Lisa dicuri pada tahun 1911.",
-      "startRow": 1,
-      "startCol": 1
+      "clue": "Museum seni di Paris tempat lukisan legendaris Mona Lisa dipajang dan pernah dicuri tahun 1911."
     }
   ]
 }`;
@@ -163,22 +515,24 @@ Format JSON yang wajib dikembalikan:
       {
         role: "system",
         content:
-          "Anda adalah master TTS edukatif bahasa Indonesia yang selalu menyusun teka-teki silang berdasarkan fakta artikel Mind.Maze yang disediakan. Selalu respon dengan format JSON murni.",
+          "Anda adalah master TTS edukatif bahasa Indonesia yang selalu menyusun teka-teki silang berdasarkan fakta artikel Mind.Maze yang disediakan. Selalu balas dalam format JSON murni.",
       },
       { role: "user", content: prompt },
     ]);
 
     const cleaned = cleanJsonText(result.text);
     const parsed = JSON.parse(cleaned);
+
     if (parsed.words && Array.isArray(parsed.words) && parsed.words.length > 0) {
-      return {
-        title: parsed.title || `Teka-Teki Silang: Fakta Mind.Maze`,
-        category: parsed.category || category,
-        grid: parsed.grid || { rows: 8, cols: 10 },
-        words: parsed.words,
-        modelUsed: "Sistem Cerdas",
-        layer: result.layer,
-      };
+      const crossword = buildInterlockingCrossword(
+        parsed.words,
+        category,
+        result.modelName,
+        result.layer
+      );
+      if (crossword) {
+        return crossword;
+      }
     }
   } catch {
     // Fallback to grounded local crossword
@@ -194,17 +548,17 @@ export async function generateAIQuiz(
   category: string = "Semua Kategori",
   count: number = 6
 ): Promise<AIQuizResult> {
-  const articlesContext = getArticlesContext();
+  const articlesContext = getArticlesContext(category);
 
   const prompt = `Anda adalah master kuis trivia resmi untuk platform Mind.Maze.
 Buatlah ${count} pertanyaan kuis pilihan ganda yang DIANGKAT LANGSUNG DARI ARTIKEL-ARTIKEL RESMI MIND.MAZE BERIKUT:
 ${articlesContext}
 
 Aturan Mutlak:
-1. SETIAP SOAL HARUS MENGUJI FAKTA DARI ARTIKEL DI ATAS (misalnya tentang sejarah wortel ungu, asal nama Bluetooth raja Viking, penemuan penisilin Alexander Fleming, pencurian Mona Lisa di Louvre 1911, mesin tik QWERTY Christopher Sholes, dryad pada mitos ketuk kayu, dsb).
+1. SETIAP SOAL HARUS MENGUJI FAKTA DARI ARTIKEL DI ATAS (misalnya tentang sejarah wortel ungu, asal nama Bluetooth raja Viking, penemuan bug ngengat Grace Hopper 1947, pencurian Mona Lisa di Louvre 1911, tombol Ctrl+Alt+Del IBM, dsb).
 2. Setiap pertanyaan harus memiliki 4 opsi jawaban dengan 1 jawaban benar.
 3. Berikan "explanation" yang mendidik dan mengacu pada penjelasan di artikel.
-4. Sertakan "category" yang sesuai dari kategori Mind.Maze ("Asal-Usul Benda", "Mitos Populer", "Peristiwa Bersejarah", "Sains & Tubuh Manusia").
+4. Sertakan "category" yang sesuai dari kategori Mind.Maze ("Asal-Usul Benda Sehari-hari", "Sisi Unik Pop Culture", "Misteri Perilaku Manusia", "Rahasia Sistem dan Inovasi").
 
 Format JSON yang wajib dikembalikan:
 {
@@ -217,7 +571,7 @@ Format JSON yang wajib dikembalikan:
       "options": ["Ungu dan Kuning", "Merah dan Biru", "Hitam dan Cokelat", "Hijau Terang"],
       "correctIndex": 0,
       "explanation": "Wortel awal yang didomestikasi di Dataran Tinggi Iran abad ke-10 adalah varietas ungu dan kuning. Warna oranye baru distabilkan petani Belanda abad ke-17 untuk menghormati William of Orange.",
-      "category": "Asal-Usul Benda"
+      "category": "Asal-Usul Benda Sehari-hari"
     }
   ]
 }`;
@@ -239,7 +593,7 @@ Format JSON yang wajib dikembalikan:
         title: parsed.title || "Kuis Trivia Fakta Mind.Maze",
         category: parsed.category || "Semua Kategori",
         questions: parsed.questions,
-        modelUsed: "Sistem Cerdas",
+        modelUsed: result.modelName,
         layer: result.layer,
       };
     }
@@ -253,40 +607,17 @@ Format JSON yang wajib dikembalikan:
 /**
  * High-quality fallback crossword derived directly from Mind.Maze articles
  */
-function getLocalFallbackCrossword(category: string): AICrosswordResult {
-  return {
-    title: "Teka-Teki Silang Fakta Mind.Maze",
-    category: category,
-    grid: { rows: 9, cols: 10 },
-    words: [
-      {
-        number: 1,
-        direction: "across",
-        word: "BLUETOOTH",
-        clue: "Teknologi nirkabel yang dinamai dari Raja Viking abad ke-10 Harald Gormsson.",
-        startRow: 1,
-        startCol: 0,
-      },
-      {
-        number: 2,
-        direction: "down",
-        word: "LOUVRE",
-        clue: "Museum Paris tempat lukisan Mona Lisa dicuri oleh Vincenzo Peruggia pada tahun 1911.",
-        startRow: 1,
-        startCol: 1,
-      },
-      {
-        number: 3,
-        direction: "down",
-        word: "QWERTY",
-        clue: "Tata letak keyboard ciptaan Christopher Sholes 1873 untuk mencegah tabrakan tuas mesin tik.",
-        startRow: 1,
-        startCol: 8,
-      },
-    ],
-    modelUsed: "Kurasi Fakta Mind.Maze",
-    layer: 4,
-  };
+export function getLocalFallbackCrossword(category: string = "Semua Kategori"): AICrosswordResult {
+  if (category && category !== "Semua Kategori") {
+    const matched = ARTICLE_CROSSWORD_PRESETS.find(
+      (p) => p.category.toLowerCase().includes(category.toLowerCase())
+    );
+    if (matched) return matched;
+  }
+
+  // Pick random preset for variety
+  const randomIndex = Math.floor(Math.random() * ARTICLE_CROSSWORD_PRESETS.length);
+  return ARTICLE_CROSSWORD_PRESETS[randomIndex];
 }
 
 /**
@@ -310,7 +641,7 @@ function getLocalFallbackQuiz(category: string = "Semua Kategori"): AIQuizResult
         correctIndex: 0,
         explanation:
           "Wortel awal yang didomestikasi di Persia abad ke-10 terdiri dari varietas ungu (mengandung antosianin) dan kuning. Petani Belanda abad ke-17 memuliakan varietas oranye untuk menghormati Wangsa Oranje (William of Orange).",
-        category: "Asal-Usul Benda",
+        category: "Asal-Usul Benda Sehari-hari",
       },
       {
         id: 2,
@@ -325,7 +656,7 @@ function getLocalFallbackQuiz(category: string = "Semua Kategori"): AIQuizResult
         correctIndex: 0,
         explanation:
           "Jim Kardach dari Intel mengusulkan nama Harald Bluetooth, raja Viking abad ke-10 yang menyatukan Skandinavia. Logonya merupakan gabungan bindrune huruf Hagalaz (ᚼ) dan Berkanan (ᛒ).",
-        category: "Asal-Usul Benda",
+        category: "Rahasia Sistem dan Inovasi",
       },
       {
         id: 3,
@@ -340,7 +671,7 @@ function getLocalFallbackQuiz(category: string = "Semua Kategori"): AIQuizResult
         correctIndex: 0,
         explanation:
           "Vincenzo Peruggia, mantan pekerja kaca di Louvre, menyembunyikan Mona Lisa di balik mantelnya pada 21 Agustus 1911. Pencurian spektakuler ini yang membuat Mona Lisa mendunia.",
-        category: "Peristiwa Bersejarah",
+        category: "Sisi Unik Pop Culture",
       },
       {
         id: 4,
@@ -354,68 +685,38 @@ function getLocalFallbackQuiz(category: string = "Semua Kategori"): AIQuizResult
         ],
         correctIndex: 1,
         explanation:
-          "Menurut riset dr. Rachel Vreeman di British Medical Journal, kematian menghentikan suplai glukosa seketika. Kulit di sekitar rambut dan kuku menyusut akibat dehidrasi, sehingga kuku terlihat memanjang padahal tidak tumbuh sama sekali.",
-        category: "Mitos Populer",
+          "Menurut riset medis di British Medical Journal, kematian menghentikan suplai glukosa seketika. Kulit di sekitar rambut dan kuku menyusut akibat dehidrasi, sehingga kuku terlihat memanjang padahal tidak tumbuh sama sekali.",
+        category: "Sisi Unik Pop Culture",
       },
       {
         id: 5,
         question:
-          "Mengapa Christopher Sholes menyusun keyboard dengan format QWERTY pada mesin tik tahun 1873?",
+          "Insiden 'bug' pertama yang tercatat dalam sejarah komputasi pada 1947 melibatkan seekor serangga sungguhan, yaitu:",
         options: [
-          "Agar kecepatan mengetik manusia mencapai rekor tertinggi",
-          "Mencegah tabrakan mekanis antar tuas huruf yang sering ditekan berurutan",
-          "Mengikuti urutan abjad Yunani kuno",
-          "Instruksi khusus dari militer telegraf Amerika Serikat",
+          "Seekor ngengat di antara Relai Harvard Mark II",
+          "Seekor kecoak di sirkuit IBM",
+          "Semut peluru di kartu punch",
+          "Lalat di tabung vakum ENIAC",
         ],
-        correctIndex: 1,
+        correctIndex: 0,
         explanation:
-          "Pada mesin tik mekanik awal, pengetikan yang terlalu cepat menyebabkan tuas huruf saling bertabrakan dan macet. Sholes memisahkan pasangan huruf yang sering berurutan (seperti T-H dan S-T) guna mencegah tabrakan tuas.",
-        category: "Asal-Usul Benda",
+          "Pada 9 September 1947, teknisi Harvard menemukan ngengat mati terselip di Relai 70 Panel F kalkulator Mark II. Grace Hopper menempelkannya di buku catatan dengan tulisan 'First actual case of bug being found'.",
+        category: "Rahasia Sistem dan Inovasi",
       },
       {
         id: 6,
         question:
-          "Siapakah ilmuwan yang secara tidak sengaja menemukan penisilin dari cawan petri yang terkontaminasi jamur Penicillium notatum pada 1928?",
+          "Fenomena psikologis di mana seseorang enggan menolong korban saat banyak orang lain hadir di lokasi disebut:",
         options: [
-          "Alexander Fleming",
-          "Louis Pasteur",
-          "Robert Koch",
-          "Edward Jenner",
+          "Bystander Effect (Difusi Tanggung Jawab)",
+          "Doorway Effect",
+          "Placebo Bias",
+          "Dunning-Kruger Effect",
         ],
         correctIndex: 0,
         explanation:
-          "Dr. Alexander Fleming menemukan cawan petri bakteri Staphylococcus miliknya tertutup jamur Penicillium notatum yang membentuk zona bebas bakteri, menjadi awal mula era antibiotik modern.",
-        category: "Peristiwa Bersejarah",
-      },
-      {
-        id: 7,
-        question:
-          "Akar tradisi mengetuk kayu (knock on wood) untuk menolak bala berasal dari kepercayaan animisme bangsa kuno terhadap:",
-        options: [
-          "Dryad atau roh pelindung yang bersemayam di dalam pepohonan",
-          "Dewa petir Thor yang memegang palu kayu",
-          "Ritual pedagang sutra Cina untuk menguji kualitas kayu kapal",
-          "Peraturan arsitektur kuil batu Yunani",
-        ],
-        correctIndex: 0,
-        explanation:
-          "Bangsa Celtic dan suku Jerman kuno meyakini pohon-pohon besar dihuni oleh Dryad (roh pohon). Mengetuk batang kayu dilakukan untuk meminta perlindungan atau berterima kasih atas keberuntungan yang diterima.",
-        category: "Mitos Populer",
-      },
-      {
-        id: 8,
-        question:
-          "Apa peristiwa tragis yang mendasari Presiden AS Ronald Reagan membuka teknologi navigasi GPS untuk publik dunia pada 1983?",
-        options: [
-          "Penembakan pesawat komersil Korean Air Lines Penerbangan 007",
-          "Krisis Selat Malaka pada era Perang Dingin",
-          "Tenggelamnya kapal selam nuklir K-129",
-          "Bencana pendaratan darurat Apollo 13",
-        ],
-        correctIndex: 0,
-        explanation:
-          "Pesawat sipil KAL 007 ditembak jatuh jet tempur Soviet setelah tersesat akibat navigasi autopilot yang melenceng. Presiden Reagan mengeluarkan arahan agar sistem militer Navstar GPS dibuka gratis untuk sipil seluruh dunia demi keselamatan penerbangan.",
-        category: "Peristiwa Bersejarah",
+          "Bystander effect terjadi karena difusi tanggung jawab, di mana setiap orang berasumsi ada orang lain yang akan bertindak terlebih dahulu.",
+        category: "Misteri Perilaku Manusia",
       },
     ],
     modelUsed: "Kurasi Fakta Mind.Maze",
