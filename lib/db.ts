@@ -1,7 +1,12 @@
 import { neon } from "@neondatabase/serverless";
 import { Article, Category, INITIAL_ARTICLES, INITIAL_CATEGORIES } from "@/data/mockData";
 
-const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+const connectionString =
+  process.env.DATABASE_URL ||
+  process.env.POSTGRES_URL ||
+  process.env.STORAGE_URL ||
+  process.env.POSTGRES_PRISMA_URL ||
+  process.env.POSTGRES_URL_NON_POOLING;
 
 // Helper to get neon client if configured
 function getSql() {
