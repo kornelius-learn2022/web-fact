@@ -33,7 +33,7 @@ export default function ChristmasHeader() {
         {/* Top Section: School Presentation and Official Logos */}
         <div className="flex flex-col items-center justify-center gap-3">
           <div className="flex items-center gap-4">
-            <CitaHatiLogo size="lg" showText={true} />
+            <CitaHatiLogo size="xl" showText={false} priority={true} />
           </div>
 
           <div className="mt-2 space-y-1">
