@@ -15,39 +15,38 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://mindmaze-chi.vercel.app"),
   title: {
-    default: "Mind.Maze — Small Facts, Big Perspective | Knowledge & Trivia Hub",
-    template: "%s | Mind.Maze",
+    default: "The Gift Worth Giving: Christmas Celebration & Market 2026 | Cita Hati Elementary School Pakuwon City",
+    template: "%s | The Gift Worth Giving",
   },
   description:
-    "Eksplorasi fakta unik interaktif, trivia kejutan, teka-teki silang AI, dan kuis pengetahuan umum dengan pendekatan visual neo-pop.",
+    "Cita Hati Christian Elementary School Pakuwon City Campus mempersembahkan Christmas Celebration & Market: The Gift Worth Giving. Pertunjukan drama musikal spektakuler dan pasar Natal terbuka untuk umum pada Sabtu, 05 Desember 2026.",
   keywords: [
-    "Mind Maze",
-    "fakta unik",
-    "trivia indonesia",
-    "pengetahuan umum",
-    "teka teki silang ai",
-    "kuis ai",
-    "knowledge hub",
-    "sains dan teknologi",
-    "sejarah dan seni",
+    "The Gift Worth Giving",
+    "Cita Hati Christian School",
+    "Cita Hati Pakuwon City",
+    "Christmas Celebration",
+    "Christmas Market Surabaya",
+    "Drama Musikal Natal",
+    "Acara Natal Surabaya",
+    "Open for Public",
+    "Pakuwon City Event",
   ],
-  authors: [{ name: "Mind.Maze Editorial Team" }],
-  creator: "Mind.Maze",
+  authors: [{ name: "Sekolah Kristen Cita Hati Pakuwon City" }],
+  creator: "Cita Hati Christian Elementary School",
   openGraph: {
     type: "website",
     locale: "id_ID",
-    url: "https://mindmaze-chi.vercel.app",
-    title: "Mind.Maze — Small Facts, Big Perspective",
+    title: "The Gift Worth Giving: Christmas Celebration & Market 2026",
     description:
-      "Platform interaktif penemuan fakta unik, kuis AI, dan teka-teki silang pengetahuan umum.",
-    siteName: "Mind.Maze",
+      "Pertunjukan drama musikal spektakuler dan pasar Natal terbuka untuk umum pada Sabtu, 05 Desember 2026 di Cita Hati Elementary School Pakuwon City Campus Surabaya.",
+    siteName: "The Gift Worth Giving 2026",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Mind.Maze — Small Facts, Big Perspective",
-    description: "Platform interaktif penemuan fakta unik, kuis AI, dan teka-teki silang.",
+    title: "The Gift Worth Giving: Christmas Celebration & Market 2026",
+    description:
+      "Pertunjukan drama musikal spektakuler dan pasar Natal terbuka untuk umum pada Sabtu, 05 Desember 2026.",
   },
   robots: {
     index: true,
@@ -70,9 +69,9 @@ export default function RootLayout({
   return (
     <html
       lang="id"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased scroll-smooth`}
     >
-      <body className="min-h-full flex flex-col bg-graphite-black text-white selection:bg-cyber-lime selection:text-black">
+      <body className="min-h-full flex flex-col bg-[#08101e] text-[#f5f0e6] selection:bg-[#e5c07b] selection:text-[#0a1122]">
         <AuthProvider>
           <DataProvider>{children}</DataProvider>
         </AuthProvider>

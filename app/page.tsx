@@ -1,64 +1,35 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import Navbar from "@/components/Navbar";
-import Hero from "@/components/Hero";
-import CategoryCards from "@/components/CategoryCards";
-import HotPickSection from "@/components/HotPickSection";
-import CrosswordTeaser from "@/components/CrosswordTeaser";
-import Footer from "@/components/Footer";
-import TypingLoader from "@/components/TypingLoader";
+import React from "react";
+import ChristmasNavbar from "@/components/christmas/ChristmasNavbar";
+import ChristmasHeader from "@/components/christmas/ChristmasHeader";
+import ChristmasInfo from "@/components/christmas/ChristmasInfo";
+import ChristmasSynopsis from "@/components/christmas/ChristmasSynopsis";
+import ChristmasVenueMap from "@/components/christmas/ChristmasVenueMap";
+import ChristmasFooter from "@/components/christmas/ChristmasFooter";
 
-export default function HomePage() {
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [introFinished, setIntroFinished] = useState(false);
-
-  const handleSelectCategory = (slug: string | null) => {
-    setSelectedCategory(slug);
-    if (slug) {
-      // Smooth scroll to articles section
-      document.getElementById("hot-picks")?.scrollIntoView({ behavior: "smooth" });
-    }
-  };
-
+export default function ChristmasEventPage() {
   return (
-    <>
-      {!introFinished && (
-        <TypingLoader onComplete={() => setIntroFinished(true)} />
-      )}
-      <div
-        className={`flex min-h-screen flex-col bg-graphite-black transition-all duration-700 ${
-          introFinished
-            ? "opacity-100 translate-y-0"
-            : "opacity-0 pointer-events-none -translate-y-2 h-screen overflow-hidden"
-        }`}
-      >
-        {/* Top Navigation */}
-        <Navbar />
+    <div className="min-h-screen flex flex-col bg-[#08101e] text-[#f5f0e6] selection:bg-[#e5c07b] selection:text-[#0a1122]">
+      {/* Sticky Navigation Bar with Quick Actions */}
+      <ChristmasNavbar />
 
-      {/* Main Home Content */}
       <main className="flex-1">
-        <Hero />
-        
-        {/* Category Cards with click to filter */}
-        <CategoryCards
-          activeCategory={selectedCategory}
-          onSelectCategory={handleSelectCategory}
-        />
+        {/* BAGIAN 1 (ATAS): Logo & Presentasi Poster */}
+        <ChristmasHeader />
 
-        {/* Articles Section filtered by category or hot picks */}
-        <HotPickSection
-          selectedCategory={selectedCategory}
-          onClearCategory={() => setSelectedCategory(null)}
-        />
+        {/* BAGIAN 2: Info (Jadwal, Countdown, Sesi Musical Drama & Market, RSVP) */}
+        <ChristmasInfo />
 
-        {/* 2-Way Interlocking Crossword (TTS) */}
-        <CrosswordTeaser />
+        {/* BAGIAN 3: Sinopsis (Jalan Cerita, Scene Breakdown, & 42+ Pemeran Siswa) */}
+        <ChristmasSynopsis />
+
+        {/* BAGIAN 4: Map yang dibuat (Denah Interaktif Festival & Google Maps Navigasi) */}
+        <ChristmasVenueMap />
       </main>
 
-      {/* Footer */}
-      <Footer />
+      {/* Footer Acara & Kontak */}
+      <ChristmasFooter />
     </div>
-    </>
   );
 }
