@@ -24,6 +24,8 @@ export default function ChristmasVenueMap() {
 
   return (
     <section id="map" className="py-16 md:py-24 bg-[#0a1122] text-[#f5f0e6] relative overflow-hidden">
+      {/* Anchor alias for navigation links targeting venue-map */}
+      <div id="venue-map" className="absolute -top-20" aria-hidden="true" />
       {/* Decorative background glow */}
       <div
         className="absolute top-1/4 left-1/2 -translate-x-1/2 w-full max-w-4xl h-96 bg-[#2d4d6e]/20 blur-3xl pointer-events-none rounded-full"

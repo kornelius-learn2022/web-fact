@@ -52,6 +52,8 @@ export default function ChristmasSynopsis() {
       className="relative bg-gradient-to-b from-[#0D1B2A] via-[#122338] to-[#0D1B2A] px-4 py-16 sm:px-6 sm:py-20 lg:px-8 border-t border-[#DFB76C]/20"
       aria-label="Sinopsis Drama Musikal dan Daftar Pemeran"
     >
+      {/* Anchor alias for links targeting #synopsis */}
+      <div id="synopsis" className="absolute -top-20" aria-hidden="true" />
       <div className="mx-auto max-w-6xl">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto">
